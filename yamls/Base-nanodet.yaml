@@ -1,0 +1,34 @@
+MODEL:
+  META_ARCHITECTURE: NanoDet
+  YML: yamls/nanodet/nanodet-m.yml
+  WEIGHTS: work_dirs/weights/nanodet/nanodet-m.pth
+  PIXEL_MEAN: [103.53, 116.28, 123.675]
+  PIXEL_STD: [57.375, 57.12, 58.395]
+SOLVER:
+  BASE_LR: 0.14
+  MOMENTUM: 0.9
+  NESTEROV: True
+  WEIGHT_DECAY: 0.0001
+  WEIGHT_DECAY_NORM: 0.0
+  WEIGHT_DECAY_BIAS: 0.0001
+  LR_SCHEDULER_NAME: WarmupCosineLR
+  WARMUP_ITERS: 5000  # warmup iters = epochs
+  MAX_ITER: 200000
+  IMS_PER_BATCH: 64
+INPUT: 
+  MIN_SIZE_TEST: 320
+  MAX_SIZE_TEST: 320
+  SIZE: (320, 320)
+  FORMAT: BGR
+
+DATASETS:
+  TRAIN: ("coco_2017_train",)
+  TEST: ("coco_2017_val",)
+DATALOADER:
+  NUM_WORKERS: 1
+OUTPUT_DIR: ./work_dirs/nanodet-m-320
+TEST:
+  AUG:
+    SIZE: 320
+    FLIP: False
+  EVAL_PERIOD: 4000
