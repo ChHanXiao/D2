@@ -25,8 +25,8 @@ DATASETS:
   TRAIN: ("coco_2017_train",)
   TEST: ("coco_2017_val",)
 DATALOADER:
-  NUM_WORKERS: 1
-OUTPUT_DIR: ./work_dirs/nanodet-m-320
+  NUM_WORKERS: 8
+OUTPUT_DIR: ./work_dirs/nanodet-m
 TEST:
   AUG:
     SIZE: 320

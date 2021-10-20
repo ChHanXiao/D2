@@ -23,15 +23,15 @@ def add_nanodet_config(cfg):
     cfg.SOLVER.WARMUP_ITERS = 1000
     cfg.SOLVER.IMS_PER_BATCH = 192
     cfg.INPUT.SIZE = (320, 320)
-    cfg.INPUT.TRAIN_PIPELINES= [
+    cfg.INPUT.CROP.TYPE = False
+    cfg.INPUT.TRAIN_PIPELINES = [
         ("RandomFlip", dict()),
         ("RandomBrightness", dict(intensity_min=0.6, intensity_max=1.4)),
         ("RandomContrast", dict(intensity_min=0.6, intensity_max=1.4)),
         ("RandomSaturation", dict(intensity_min=0.6, intensity_max=1.4)),
         ("RandomLighting", dict(scale=0.1)),
-        ("CenterAffine", dict( output_size=(320, 320), random_aug=True)),
+        ("CenterAffine", dict(output_size=(320, 320))),
     ]
-    cfg.INPUT.CROP.TYPE = False
-    cfg.INPUT.TEST_PIPELINES = (('CenterAffine',dict(output_size=(320, 320))),)
+    cfg.INPUT.TEST_PIPELINES = [('CenterAffine', dict(output_size=(320, 320))),]
     cfg.INPUT.FORMAT = "BGR"
     cfg.TEST.AUG.SIZE = 320
