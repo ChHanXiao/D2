@@ -262,10 +262,10 @@ class GFLHead(nn.Module):
             loss_bbox = sum(losses_bbox)
             loss_dfl = sum(losses_dfl)
 
-        loss = loss_qfl + loss_bbox + loss_dfl
+        # loss = loss_qfl + loss_bbox + loss_dfl
         loss_states = dict(loss_qfl=loss_qfl, loss_bbox=loss_bbox, loss_dfl=loss_dfl)
 
-        return loss, loss_states
+        return loss_states
 
     def loss_single(
         self,

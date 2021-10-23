@@ -3,7 +3,7 @@ Date: 2021-10-17 15:41:24
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2021-10-19 21:41:30
+LastEditTime: 2021-10-23 21:10:30
 FilePath: /D2/projects/NanoDet/config/config.py
 '''
 
@@ -30,8 +30,8 @@ def add_nanodet_config(cfg):
         ("RandomContrast", dict(intensity_min=0.6, intensity_max=1.4)),
         ("RandomSaturation", dict(intensity_min=0.6, intensity_max=1.4)),
         ("RandomLighting", dict(scale=0.1)),
-        ("CenterAffine", dict(output_size=(320, 320))),
+        ("CenterAffine", dict()),
     ]
-    cfg.INPUT.TEST_PIPELINES = [('CenterAffine', dict(output_size=(320, 320))),]
+    cfg.INPUT.TEST_PIPELINES = [('CenterAffine', dict()),]
     cfg.INPUT.FORMAT = "BGR"
     cfg.TEST.AUG.SIZE = 320

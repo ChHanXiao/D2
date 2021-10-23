@@ -1,4 +1,13 @@
-from .yacs import CfgNode
+'''
+Date: 2021-10-19 21:15:08
+Author: ChHanXiao
+Github: https://github.com/ChHanXiao
+LastEditors: ChHanXiao
+LastEditTime: 2021-10-23 19:47:41
+FilePath: /D2/projects/NanoDet/modeling/util/config.py
+'''
+# from .yacs import CfgNode
+from fvcore.common.config import CfgNode
 
 cfg_s = CfgNode(new_allowed=True)
 cfg_s.save_dir = "./"

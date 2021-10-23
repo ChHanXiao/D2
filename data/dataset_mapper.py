@@ -74,7 +74,7 @@ class BaseDtasetMapper(DatasetMapper):
         self.augmentations          = T.AugmentationList(augmentations)
         self.image_format           = image_format
         self.use_instance_mask      = use_instance_mask
-        self.instance_mask_format = instance_mask_format
+        self.instance_mask_format   = instance_mask_format
         self.use_keypoint           = use_keypoint
         self.keypoint_hflip_indices = keypoint_hflip_indices
         self.proposal_topk          = precomputed_proposal_topk
@@ -82,7 +82,7 @@ class BaseDtasetMapper(DatasetMapper):
         # fmt: on
         logger = logging.getLogger(__name__)
         mode = "training" if is_train else "inference"
-        logger.info(f"[DatasetMapper] Augmentations used in {mode}: {augmentations}")
+        logger.info("[DatasetMapper] Augmentations used in {}: {}".format(mode, augmentations))
 
     @classmethod
     def from_config(cls, cfg, is_train: bool = True):

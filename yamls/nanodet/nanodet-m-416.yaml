@@ -1,7 +1,7 @@
 MODEL:
   META_ARCHITECTURE: NanoDet
-  YML: yamls/nanodet/yml/nanodet-m.yml
-  WEIGHTS: work_dirs/weights/nanodet/nanodet-m.pth
+  YML: yamls/nanodet/yml/nanodet-m-416.yml
+  WEIGHTS: work_dirs/weights/nanodet/nanodet-m-416.pth
   PIXEL_MEAN: [103.53, 116.28, 123.675]
   PIXEL_STD: [57.375, 57.12, 58.395]
 SOLVER:
@@ -16,9 +16,9 @@ SOLVER:
   MAX_ITER: 400000
   IMS_PER_BATCH: 80
 INPUT: 
-  MIN_SIZE_TEST: 320
-  MAX_SIZE_TEST: 320
-  SIZE: (320, 320)
+  MIN_SIZE_TEST: 416
+  MAX_SIZE_TEST: 416
+  SIZE: (416, 416)
   FORMAT: BGR
 
 DATASETS:
@@ -26,9 +26,9 @@ DATASETS:
   TEST: ("coco_2017_val",)
 DATALOADER:
   NUM_WORKERS: 8
-OUTPUT_DIR: ./work_dirs/nanodet-m
+OUTPUT_DIR: ./work_dirs/nanodet-m-416
 TEST:
   AUG:
-    SIZE: 320
+    SIZE: 416
     FLIP: False
   EVAL_PERIOD: 4000

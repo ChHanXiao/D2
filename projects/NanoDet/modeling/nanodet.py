@@ -1,7 +1,7 @@
 '''
 Author: doumu
 Date: 2021-09-27 17:44:05
-LastEditTime: 2021-10-17 15:40:01
+LastEditTime: 2021-10-23 21:50:31
 LastEditors: ChHanXiao
 Description: 
 FilePath: /D2/projects/NanoDet/modeling/nanodet.py
@@ -27,6 +27,7 @@ from .fpn import build_fpn
 from .head import build_head
 
 __all__ = ["NanoDet"]
+
 
 def warp_boxes(boxes, M, width, height):
     n = len(boxes)
@@ -103,7 +104,9 @@ class NanoDet(nn.Module):
         #     img = images.numpy().transpose(1,2,0)
         #     cv2.imwrite('filename.jpg', img)
         #     print(images.shape)
-            
+        if torch.onnx.is_in_onnx_export():
+            return self.forward_(batched_inputs)
+
         images = self.preprocess_image(batched_inputs)
         features = self.backbone(images.tensor)
         x = self.fpn(features)
@@ -131,7 +134,7 @@ class NanoDet(nn.Module):
                 targets_classes.append(classes)
             gt_meta['gt_bboxes'] = targets_boxes
             gt_meta['gt_labels'] = targets_classes
-            loss, loss_states = self.head.loss(preds, gt_meta)
+            loss_states = self.head.loss(preds, gt_meta)
             return loss_states
         else:
             results_infer = self.head.post_process(preds, gt_meta)
@@ -181,7 +184,13 @@ class NanoDet(nn.Module):
         Normalize, pad and batch the input images.
         """
         images = [x["image"].to(self.device) for x in batched_inputs]
-
         images = [(x - self.pixel_mean) / self.pixel_std for x in images]
         images = ImageList.from_tensors(images, 0)
         return images
+
+    @torch.no_grad()
+    def forward_(self, batched_inputs):
+        features = self.backbone(batched_inputs)
+        x = self.fpn(features)
+        preds = self.head(x)
+        return preds
