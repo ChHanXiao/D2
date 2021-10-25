@@ -3,14 +3,14 @@ Date: 2021-10-17 15:41:24
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2021-10-23 21:10:30
+LastEditTime: 2021-10-24 09:02:42
 FilePath: /D2/projects/NanoDet/config/config.py
 '''
 
 from detectron2.config import CfgNode as CN
 
 def add_nanodet_config(cfg):
-    cfg.MODEL.YML = "yamls/nanodet/nanodet-m.yml"
+    cfg.MODEL.YML = "yamls/nanodet/yml/nanodet-m.yml"
     cfg.MODEL.PIXEL_MEAN = [103.53, 116.28, 123.675]
     cfg.MODEL.PIXEL_STD = [57.375, 57.12, 58.395]
     cfg.SOLVER.BASE_LR = 0.14

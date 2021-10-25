@@ -1,10 +1,10 @@
 '''
-Date: 2021-10-17 10:56:07
+Date: 2021-10-24 08:41:56
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2021-10-24 09:22:38
-FilePath: /D2/projects/NanoDet/train_net.py
+LastEditTime: 2021-10-24 17:28:14
+FilePath: /D2/projects/YOLO/train_net.py
 '''
 """
 Yolo Training script
@@ -30,10 +30,10 @@ from detectron2.data import (
 )
 from detectron2.evaluation import COCOEvaluator
 from detectron2.config import get_cfg
-
 from modeling import *
-from config.config import add_nanodet_config
+from config.config import add_yolo_config
 from data.dataset_mapper import BaseDtasetMapper
+
 
 class Trainer(DefaultTrainer):
 
@@ -56,7 +56,7 @@ class Trainer(DefaultTrainer):
 
 def setup(args):
     cfg = get_cfg()
-    add_nanodet_config(cfg)
+    add_yolo_config(cfg)
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
     cfg.freeze()
@@ -66,9 +66,9 @@ def setup(args):
 
 def main(args):
     cfg = setup(args)
-
     if args.eval_only:
         model = Trainer.build_model(cfg)
+        print(model)
         DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
             cfg.MODEL.WEIGHTS, resume=args.resume
         )

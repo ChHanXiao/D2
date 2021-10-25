@@ -22,6 +22,9 @@ from detectron2.data.dataset_mapper import DatasetMapper
 from detectron2.structures import BoxMode
 from .detection_utils import build_transform_gen
 
+__all__ = [
+    "BaseDtasetMapper",
+]
 
 class BaseDtasetMapper(DatasetMapper):
     """
