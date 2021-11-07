@@ -1,11 +1,28 @@
 # YOLOv3 common modules
 """ Directly Imported from yolov3 - needed for the yolo.py script"""
+import logging
 import math
 import warnings
 import torch
 import torch.nn as nn
 
-from detectron2.layers import CNNBlockBase, Conv2d, get_norm
+
+def get_activation(act=True):
+    act_name = None
+    if isinstance(act, str):
+        if act == "silu":
+            m = nn.SiLU()
+        elif act == "relu":
+            m = nn.ReLU(inplace=True)
+            act_name = 'relu'
+        elif act == "lrelu":
+            m = nn.LeakyReLU(0.1, inplace=True)
+            act_name = 'leaky_relu'
+        else:
+            raise AttributeError("Unsupported act type: {}".format(act))
+    else:
+        m = nn.SiLU() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
+    return m, act_name
 
 
 def autopad(k, p=None):  # kernel, padding
@@ -15,27 +32,31 @@ def autopad(k, p=None):  # kernel, padding
     return p
 
 
-class Conv(CNNBlockBase):
+class Conv(nn.Module):
     # Standard convolution
-    # ch_in, ch_out, kernel, stride, padding, groups
-    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, norm="BN", act=nn.LeakyReLU):
-        super(Conv, self).__init__(in_channels=c1, out_channels=c2, stride=s)
-        if isinstance(act, nn.LeakyReLU):
-            act = nn.LeakyReLU(0.1)
-        else:
-            act = act()
-        norm = get_norm(norm, c2)
-        bias = norm is None
-        self.conv = Conv2d(c1, c2, k, s, autopad(k, p), groups=g,
-                           bias=bias, norm=norm, activation=act)
+    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):  # ch_in, ch_out, kernel, stride, padding, groups
+        super().__init__()
+        self.conv = nn.Conv2d(c1, c2, k, s, autopad(k, p), groups=g, bias=False)
+        self.bn = nn.BatchNorm2d(c2)
+        self.act = nn.SiLU() if act is True else (act if isinstance(act, nn.Module) else nn.Identity())
+        self.act, self.act_name = get_activation(act=act)
 
     def forward(self, x):
-        return self.conv(x)
+        return self.act(self.bn(self.conv(x)))
+
+    def forward_fuse(self, x):
+        return self.act(self.conv(x))
+    
+    def init_weights(self):
+        if self.act_name == "relu":
+            # nn.init.kaiming_normal_(self.conv.weight, mode='fan_out', nonlinearity="relu")
+            pass
 
 class DWConv(Conv):
     # Depth-wise convolution class
-    def __init__(self, c1, c2, k=1, s=1, **kwargs):  # ch_in, ch_out, kernel, stride, padding, groups
-        super().__init__(c1, c2, k, s, g=math.gcd(c1, c2), **kwargs)
+    def __init__(self, c1, c2, k=1, s=1, act=True):  # ch_in, ch_out, kernel, stride, padding, groups
+        super().__init__(c1, c2, k, s, g=math.gcd(c1, c2), act=act)
+
 
 class TransformerLayer(nn.Module):
     # Transformer layer https://arxiv.org/abs/2010.11929 (LayerNorm layers removed for better performance)
@@ -56,11 +77,11 @@ class TransformerLayer(nn.Module):
 
 class TransformerBlock(nn.Module):
     # Vision Transformer https://arxiv.org/abs/2010.11929
-    def __init__(self, c1, c2, num_heads, num_layers):
+    def __init__(self, c1, c2, num_heads, num_layers, act=True):
         super().__init__()
         self.conv = None
         if c1 != c2:
-            self.conv = Conv(c1, c2)
+            self.conv = Conv(c1, c2, act=act)
         self.linear = nn.Linear(c2, c2)  # learnable position embedding
         self.tr = nn.Sequential(*[TransformerLayer(c2, num_heads) for _ in range(num_layers)])
         self.c2 = c2
@@ -73,103 +94,124 @@ class TransformerBlock(nn.Module):
         return self.tr(p + self.linear(p)).unsqueeze(3).transpose(0, 3).reshape(b, self.c2, w, h)
 
 
-
-
-class Bottleneck(CNNBlockBase):
+class Bottleneck(nn.Module):
     # Standard bottleneck
-    # ch_in, ch_out, shortcut, groups, expansion
-    def __init__(self, c1, c2, shortcut=True, g=1, e=0.5, **kwargs):
-        super(Bottleneck, self).__init__(in_channels=c1, out_channels=c2, stride=1)
+    def __init__(self, c1, c2, shortcut=True, g=1, e=0.5, act=True):  # ch_in, ch_out, shortcut, groups, expansion
+        super().__init__()
         c_ = int(c2 * e)  # hidden channels
-        self.cv1 = Conv(c1, c_, 1, 1, **kwargs)
-        self.cv2 = Conv(c_, c2, 3, 1, g=g, **kwargs)
-        self.add = False
-        if shortcut and c1 == c2:
-            self.add = True
+        self.cv1 = Conv(c1, c_, 1, 1, act=act)
+        self.cv2 = Conv(c_, c2, 3, 1, g=g, act=act)
+        self.add = shortcut and c1 == c2
 
     def forward(self, x):
         return x + self.cv2(self.cv1(x)) if self.add else self.cv2(self.cv1(x))
 
 
-class BottleneckCSP(CNNBlockBase):
+class BottleneckCSP(nn.Module):
     # CSP Bottleneck https://github.com/WongKinYiu/CrossStagePartialNetworks
-    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, **kwargs):  # ch_in, ch_out, number, shortcut, groups, expansion
-        super(BottleneckCSP, self).__init__(in_channels=c1, out_channels=c2, stride=1)
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, act=True):  # ch_in, ch_out, number, shortcut, groups, expansion
+        super().__init__()
         c_ = int(c2 * e)  # hidden channels
-        self.cv1 = Conv(c1, c_, 1, 1, **kwargs)
+        self.cv1 = Conv(c1, c_, 1, 1, act=act)
         self.cv2 = nn.Conv2d(c1, c_, 1, 1, bias=False)
         self.cv3 = nn.Conv2d(c_, c_, 1, 1, bias=False)
-        self.cv4 = Conv(2 * c_, c2, 1, 1, **kwargs)
+        self.cv4 = Conv(2 * c_, c2, 1, 1, act=act)
         self.bn = nn.BatchNorm2d(2 * c_)  # applied to cat(cv2, cv3)
         self.act = nn.LeakyReLU(0.1, inplace=True)
-        self.m = nn.Sequential(*[Bottleneck(c_, c_, shortcut, g, e=1.0, **kwargs) for _ in range(n)])
+        self.m = nn.Sequential(*[Bottleneck(c_, c_, shortcut, g, e=1.0, act=True) for _ in range(n)])
 
     def forward(self, x):
         y1 = self.cv3(self.m(self.cv1(x)))
         y2 = self.cv2(x)
         return self.cv4(self.act(self.bn(torch.cat((y1, y2), dim=1))))
 
-class C3(CNNBlockBase):
+
+class C3(nn.Module):
     # CSP Bottleneck with 3 convolutions
-    # ch_in, ch_out, number, shortcut, groups, expansion
-    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, **kwargs):
-        super(C3, self).__init__(in_channels=c1, out_channels=c2, stride=1)
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, act=True):  # ch_in, ch_out, number, shortcut, groups, expansion
+        super().__init__()
         c_ = int(c2 * e)  # hidden channels
-        self.cv1 = Conv(c1, c_, 1, 1, **kwargs)
-        self.cv2 = Conv(c1, c_, 1, 1, **kwargs)
-        self.cv3 = Conv(2 * c_, c2, 1, **kwargs)  # act=FReLU(c2, **kwargs)
-        self.m = nn.Sequential(*[Bottleneck(c_, c_, shortcut, g, e=1.0, **kwargs)
-                               for _ in range(n)])
-        # self.m = nn.Sequential(*[CrossConv(c_, c_, 3, 1, g, 1.0, shortcut) for _ in range(n)], **kwargs)
+        if act == 'relu_silu':
+            act = 'relu'
+            last_act = 'silu'
+        elif act == 'relu_lrelu':
+            act = 'relu'
+            last_act = 'lrelu'
+        else:
+            last_act = act
+        self.cv1 = Conv(c1, c_, 1, 1, act=act)
+        self.cv2 = Conv(c1, c_, 1, 1, act=act)
+        self.cv3 = Conv(2 * c_, c2, 1, act=last_act)  # act=FReLU(c2)
+        self.m = nn.Sequential(*[Bottleneck(c_, c_, shortcut, g, e=1.0, act=act) for _ in range(n)])
+        # self.m = nn.Sequential(*[CrossConv(c_, c_, 3, 1, g, 1.0, shortcut) for _ in range(n)])
 
     def forward(self, x):
         return self.cv3(torch.cat((self.m(self.cv1(x)), self.cv2(x)), dim=1))
 
 
-class CSPOSA(nn.Module):
-    # CSP OSA Net with PCB as proposed for tiny-Yolov4
-    def __init__(self, c1, c2, **kwargs):
-        super(CSPOSA, self).__init__()
-        assert c1 % 2 == 0
-        assert c2 == c1 * 2
-        g = c1 // 2
-        self.g = g
-        self.cv1 = Conv(c1, 2 * g, 3, **kwargs)
-        self.cv2 = Conv(g, g, 3, **kwargs)
-        self.cv3 = Conv(g, g, 3, **kwargs)
-        self.cv4 = Conv(2 * g, 2 * g, 1, **kwargs)
-
-    def forward(self, x):
-        x = self.cv1(x)
-        x1, x2 = torch.split(x, self.g, dim=1)
-        x3 = self.cv2(x2)
-        x4 = self.cv3(x3)
-        x3 = torch.cat([x3, x4], dim=1)
-        x3 = self.cv4(x3)
-        return torch.cat([x1, x2, x3], dim=1)
+class C3TR(C3):
+    # C3 module with TransformerBlock()
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, act=True):
+        super().__init__(c1, c2, n, shortcut, g, e, act)
+        c_ = int(c2 * e)
+        self.m = TransformerBlock(c_, c_, 4, n, act=act)
 
 
-class SPP(CNNBlockBase):
-    # Spatial pyramid pooling layer used in YOLOv3-SPP
-    def __init__(self, c1, c2, k=(5, 9, 13), **kwargs):
-        super(SPP, self).__init__(in_channels=c1, out_channels=c2, stride=1)
+class C3SPP(C3):
+    # C3 module with SPP()
+    def __init__(self, c1, c2, k=(5, 9, 13), n=1, shortcut=True, g=1, e=0.5, act=True):
+        super().__init__(c1, c2, n, shortcut, g, e, act)
+        c_ = int(c2 * e)
+        self.m = SPP(c_, c_, k, act=act)
+
+
+class C3Ghost(C3):
+    # C3 module with GhostBottleneck()
+    def __init__(self, c1, c2, n=1, shortcut=True, g=1, e=0.5, act=True):
+        super().__init__(c1, c2, n, shortcut, g, e, act)
+        c_ = int(c2 * e)  # hidden channels
+        self.m = nn.Sequential(*[GhostBottleneck(c_, c_, act=act) for _ in range(n)])
+
+
+class SPP(nn.Module):
+    # Spatial Pyramid Pooling (SPP) layer https://arxiv.org/abs/1406.4729
+    def __init__(self, c1, c2, k=(5, 9, 13), act=True):
+        super().__init__()
         c_ = c1 // 2  # hidden channels
-        self.cv1 = Conv(c1, c_, 1, 1, **kwargs)
-        self.cv2 = Conv(c_ * (len(k) + 1), c2, 1, 1, **kwargs)
+        if act == 'relu_silu':
+            act = 'relu'
+            last_act = 'silu'
+        elif act == 'relu_lrelu':
+            act = 'relu'
+            last_act = 'lrelu'
+        else:
+            last_act = act
+        self.cv1 = Conv(c1, c_, 1, 1, act=act)
+        self.cv2 = Conv(c_ * (len(k) + 1), c2, 1, 1, act=last_act)
         self.m = nn.ModuleList([nn.MaxPool2d(kernel_size=x, stride=1, padding=x // 2) for x in k])
 
     def forward(self, x):
         x = self.cv1(x)
-        return self.cv2(torch.cat([x] + [m(x) for m in self.m], 1))
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')  # suppress torch 1.9.0 max_pool2d() warning
+            return self.cv2(torch.cat([x] + [m(x) for m in self.m], 1))
 
 
-class SPPF(CNNBlockBase):
+class SPPF(nn.Module):
     # Spatial Pyramid Pooling - Fast (SPPF) layer for YOLOv5 by Glenn Jocher
-    def __init__(self, c1, c2, k=5, **kwargs):  # equivalent to SPP(k=(5, 9, 13))
-        super(SPPF, self).__init__(in_channels=c1, out_channels=c2, stride=1)
+    def __init__(self, c1, c2, k=5, act=True):  # equivalent to SPP(k=(5, 9, 13))
+        super().__init__()
         c_ = c1 // 2  # hidden channels
-        self.cv1 = Conv(c1, c_, 1, 1, **kwargs)
-        self.cv2 = Conv(c_ * 4, c2, 1, 1, **kwargs)
+        if act == 'relu_silu':
+            act = 'relu'
+            last_act = 'silu'
+        elif act == 'relu_lrelu':
+            act = 'relu'
+            last_act = 'lrelu'
+        else:
+            last_act = act
+        self.cv1 = Conv(c1, c_, 1, 1, act=act)
+        self.cv2 = Conv(c_ * 4, c2, 1, 1, act=last_act)
         self.m = nn.MaxPool2d(kernel_size=k, stride=1, padding=k // 2)
 
     def forward(self, x):
@@ -181,23 +223,52 @@ class SPPF(CNNBlockBase):
             return self.cv2(torch.cat([x, y1, y2, self.m(y2)], 1))
 
 
-class Focus(CNNBlockBase):
+class Focus(nn.Module):
     # Focus wh information into c-space
-    # ch_in, ch_out, kernel, stride, padding, groups
-    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, **kwargs):
-        super(Focus, self).__init__(in_channels=c1 * 4, out_channels=c2, stride=s)
-        self.conv = Conv(c1 * 4, c2, k, s, p, g, **kwargs)
+    def __init__(self, c1, c2, k=1, s=1, p=None, g=1, act=True):  # ch_in, ch_out, kernel, stride, padding, groups
+        super().__init__()
+        self.conv = Conv(c1 * 4, c2, k, s, p, g, act)
         # self.contract = Contract(gain=2)
 
     def forward(self, x):  # x(b,c,w,h) -> y(b,4c,w/2,h/2)
-        return self.conv(
-            torch.cat(
-                [x[..., :: 2, :: 2],
-                 x[..., 1:: 2, :: 2],
-                 x[..., :: 2, 1:: 2],
-                 x[..., 1:: 2, 1:: 2]],
-                1))
+        return self.conv(torch.cat([x[..., ::2, ::2], x[..., 1::2, ::2], x[..., ::2, 1::2], x[..., 1::2, 1::2]], 1))
         # return self.conv(self.contract(x))
+
+
+class GhostConv(nn.Module):
+    # Ghost Convolution https://github.com/huawei-noah/ghostnet
+    def __init__(self, c1, c2, k=1, s=1, g=1, act=True):  # ch_in, ch_out, kernel, stride, groups
+        super().__init__()
+        c_ = c2 // 2  # hidden channels
+        if act == 'relu_silu':
+            act = 'relu'
+            last_act = 'silu'
+        elif act == 'relu_lrelu':
+            act = 'relu'
+            last_act = 'lrelu'
+        else:
+            last_act = act
+        self.cv1 = Conv(c1, c_, k, s, None, g, act)
+        self.cv2 = Conv(c_, c_, 5, 1, None, c_, last_act)
+
+    def forward(self, x):
+        y = self.cv1(x)
+        return torch.cat([y, self.cv2(y)], 1)
+
+
+class GhostBottleneck(nn.Module):
+    # Ghost Bottleneck https://github.com/huawei-noah/ghostnet
+    def __init__(self, c1, c2, k=3, s=1, act=True):  # ch_in, ch_out, kernel, stride
+        super().__init__()
+        c_ = c2 // 2
+        self.conv = nn.Sequential(GhostConv(c1, c_, 1, 1, act=act),  # pw
+                                  DWConv(c_, c_, k, s, act=False) if s == 2 else nn.Identity(),  # dw
+                                  GhostConv(c_, c2, 1, 1, act=False))  # pw-linear
+        self.shortcut = nn.Sequential(DWConv(c1, c1, k, s, act=False),
+                                      Conv(c1, c2, 1, 1, act=False)) if s == 2 else nn.Identity()
+
+    def forward(self, x):
+        return self.conv(x) + self.shortcut(x)
 
 
 class Contract(nn.Module):
@@ -231,8 +302,9 @@ class Expand(nn.Module):
 class Concat(nn.Module):
     # Concatenate a list of tensors along dimension
     def __init__(self, dimension=1):
-        super(Concat, self).__init__()
+        super().__init__()
         self.d = dimension
 
     def forward(self, x):
         return torch.cat(x, self.d)
+

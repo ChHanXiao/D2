@@ -3,7 +3,7 @@ Date: 2021-10-24 08:41:56
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2021-10-24 17:28:14
+LastEditTime: 2021-11-07 23:42:18
 FilePath: /D2/projects/YOLO/train_net.py
 '''
 """
@@ -12,6 +12,7 @@ This script is a simplified version of the script in detectron2/tools
 """
 
 from pathlib import Path
+from re import M
 import torch
 import os
 import sys
@@ -68,10 +69,11 @@ def main(args):
     cfg = setup(args)
     if args.eval_only:
         model = Trainer.build_model(cfg)
-        print(model)
         DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
             cfg.MODEL.WEIGHTS, resume=args.resume
         )
+        # checkpoint = DetectionCheckpointer(model,save_dir='work_dirs')
+        # checkpoint.save("yoloxs_rslu")
         res = Trainer.test(cfg, model)
         return res
 

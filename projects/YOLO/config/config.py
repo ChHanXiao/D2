@@ -3,7 +3,7 @@ Date: 2021-10-24 08:42:10
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2021-10-24 09:08:34
+LastEditTime: 2021-11-03 23:09:37
 FilePath: /D2/projects/YOLO/config/config.py
 '''
 from detectron2.config import CfgNode as CN
@@ -12,8 +12,6 @@ from detectron2.config import CfgNode as CN
 def add_yolo_config(cfg):
     cfg.MODEL.YAML = "yamls/yolo/yml/yolov5m.yaml"
     cfg.MODEL.YOLO = CN()
-    cfg.MODEL.YOLO.NORM = "BN"
-    cfg.MODEL.YOLO.ACTIVATION = "nn.LeakyReLU"
     cfg.MODEL.YOLO.FOCAL_LOSS_GAMMA = 0.0
     cfg.MODEL.YOLO.BOX_LOSS_GAIN = 0.05
     cfg.MODEL.YOLO.CLS_LOSS_GAIN = 0.3
@@ -35,7 +33,7 @@ def add_yolo_config(cfg):
     cfg.SOLVER.LR_SCHEDULER_NAME = "WarmupCosineLR"
     cfg.SOLVER.WARMUP_ITERS = 1000
     cfg.SOLVER.IMS_PER_BATCH = 64
-    cfg.INPUT.SIZE = (416, 416)
+    cfg.INPUT.SIZE = (640, 640)
     cfg.INPUT.CROP.TYPE = False
     cfg.INPUT.TRAIN_PIPELINES = [
         ("RandomFlip", dict()),
@@ -46,5 +44,5 @@ def add_yolo_config(cfg):
         ("CenterAffine", dict()),
     ]
     cfg.INPUT.TEST_PIPELINES = [('CenterAffine', dict()),]
-    cfg.INPUT.FORMAT = "BGR"
-    cfg.TEST.AUG.SIZE = 416
+    cfg.INPUT.FORMAT = "RGB"
+    cfg.TEST.AUG.SIZE = 640

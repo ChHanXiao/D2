@@ -1,0 +1,42 @@
+MODEL:
+  META_ARCHITECTURE: Yolo
+  YAML: yamls/yolo/yml/yoloxs.yaml
+  WEIGHTS: work_dirs/weights/yolo/yoloxs.pth
+  YOLO:
+    FOCAL_LOSS_GAMMA: 0.0
+    BOX_LOSS_GAIN: 0.05
+    CLS_LOSS_GAIN: 0.3
+    CLS_POSITIVE_WEIGHT: 1.0
+    OBJ_LOSS_GAIN: 0.7
+    OBJ_POSITIVE_WEIGHT: 1.0
+    LABEL_SMOOTHING: 0.0
+    ANCHOR_T: 4.0
+    CONF_THRESH: 0.001
+    IOU_THRES: 0.65
+  PIXEL_MEAN: [0.0, 0.0, 0.0]
+  PIXEL_STD: [255.0, 255.0, 255.0]
+SOLVER:
+  BASE_LR: 0.01
+  MOMENTUM: 0.9
+  NESTEROV: True
+  WEIGHT_DECAY: 0.0001
+  WEIGHT_DECAY_NORM: 0.0
+  WEIGHT_DECAY_BIAS: 0.0001
+  LR_SCHEDULER_NAME: WarmupCosineLR
+  WARMUP_ITERS: 10000
+  MAX_ITER: 200000
+  IMS_PER_BATCH: 4
+INPUT:  # Uses Yolo's own transforms
+  SIZE: (640,640)
+  FORMAT: RGB
+DATASETS:
+  TRAIN: ("coco_2017_train",)
+  TEST: ("coco_2017_val",)
+DATALOADER:
+  NUM_WORKERS: 8
+OUTPUT_DIR: ./work_dirs/yolox
+TEST:
+  AUG:
+    SIZE: 640
+    FLIP: False
+  EVAL_PERIOD: 4000

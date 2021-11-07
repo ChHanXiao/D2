@@ -139,26 +139,26 @@ class NanoDet(nn.Module):
         else:
             results_infer = self.head.post_process(preds, gt_meta)
 
-            raw_size = []
+            raw_size_ = []
             warp_matrix_ = []
             for input_per_image in batched_inputs:
                 height = input_per_image.get("height")
                 width = input_per_image.get("width")
                 warp_matrix = input_per_image.get("warp_matrix", np.eye(3))
-                raw_size.append((width,height))
+                raw_size_.append((width,height))
                 warp_matrix_.append(warp_matrix)
 
-            results = self.process_inference(results_infer, images.image_sizes, raw_size, warp_matrix_)
+            results = self.process_inference(results_infer, images.image_sizes, raw_size_, warp_matrix_)
             processed_results = []
             for results_per_image in results:
                 processed_results.append({"instances": results_per_image})
             return processed_results
 
-    def process_inference(self, out, image_sizes, raw_sizes, warp_matrix_):
-        assert len(out) == len(image_sizes) == len(raw_sizes) == len(warp_matrix_)
+    def process_inference(self, out, image_sizes, raw_size_, warp_matrix_):
+        assert len(out) == len(image_sizes) == len(raw_size_) == len(warp_matrix_)
         results_all: List[Instances] = []
         # Statistics per image
-        for si, (pred, img_size, raw_size, warp_matrix) in enumerate(zip(out, image_sizes, raw_sizes, warp_matrix_)):
+        for si, (pred, img_size, raw_size, warp_matrix) in enumerate(zip(out, image_sizes, raw_size_, warp_matrix_)):
             det_bboxes, det_labels = pred
             if len(det_bboxes) == 0:
                 continue

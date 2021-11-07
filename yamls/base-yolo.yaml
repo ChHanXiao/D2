@@ -1,8 +1,7 @@
 MODEL:
   META_ARCHITECTURE: Yolo
   YAML: yamls/yolo/yml/yolov5s.yaml
-  WEIGHTS: work_dirs/weights/yolo/yolov5s.pt
-
+  WEIGHTS: work_dirs/weights/yolo/yolov5s.pth
   BACKBONE:
     NAME: build_darknet_backbone
   YOLO:
@@ -16,7 +15,6 @@ MODEL:
     ANCHOR_T: 4.0
     CONF_THRESH: 0.001
     IOU_THRES: 0.65
-    ACTIVATION: "nn.SiLU"
   PIXEL_MEAN: [0.0, 0.0, 0.0]
   PIXEL_STD: [255.0, 255.0, 255.0]
 SOLVER:
@@ -29,10 +27,10 @@ SOLVER:
   LR_SCHEDULER_NAME: WarmupCosineLR
   WARMUP_ITERS: 10000
   MAX_ITER: 200000
-  IMS_PER_BATCH: 16
+  IMS_PER_BATCH: 4
 INPUT:  # Uses Yolo's own transforms
-  SIZE: (416,416)
-  FORMAT: BGR
+  SIZE: (640,640)
+  FORMAT: RGB
 DATASETS:
   TRAIN: ("coco_2017_train",)
   TEST: ("coco_2017_val",)
@@ -41,6 +39,6 @@ DATALOADER:
 OUTPUT_DIR: ./work_dirs/yolo
 TEST:
   AUG:
-    SIZE: 416
+    SIZE: 640
     FLIP: False
   EVAL_PERIOD: 4000
