@@ -2,8 +2,6 @@ MODEL:
   META_ARCHITECTURE: Yolo
   YAML: yamls/yolo/yml/yolov5s.yaml
   WEIGHTS: work_dirs/weights/yolo/yolov5s.pth
-  BACKBONE:
-    NAME: build_darknet_backbone
   YOLO:
     FOCAL_LOSS_GAMMA: 0.0
     BOX_LOSS_GAIN: 0.05
@@ -27,7 +25,7 @@ SOLVER:
   LR_SCHEDULER_NAME: WarmupCosineLR
   WARMUP_ITERS: 10000
   MAX_ITER: 200000
-  IMS_PER_BATCH: 4
+  IMS_PER_BATCH: 8
 INPUT:  # Uses Yolo's own transforms
   SIZE: (640,640)
   FORMAT: RGB

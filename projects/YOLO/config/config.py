@@ -3,11 +3,10 @@ Date: 2021-10-24 08:42:10
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2021-11-03 23:09:37
+LastEditTime: 2021-11-09 21:21:38
 FilePath: /D2/projects/YOLO/config/config.py
 '''
 from detectron2.config import CfgNode as CN
-
 
 def add_yolo_config(cfg):
     cfg.MODEL.YAML = "yamls/yolo/yml/yolov5m.yaml"
@@ -34,6 +33,14 @@ def add_yolo_config(cfg):
     cfg.SOLVER.WARMUP_ITERS = 1000
     cfg.SOLVER.IMS_PER_BATCH = 64
     cfg.INPUT.SIZE = (640, 640)
+    # ===========mosaic==============
+    cfg.INPUT.MOSAIC = CN()
+    cfg.INPUT.MOSAIC.ENABLED = True
+    cfg.INPUT.MOSAIC.PROBABILITY = 0.4
+    cfg.INPUT.MOSAIC.IMG_SCALE = (640, 640)
+    cfg.INPUT.MOSAIC.CENTER_RATIO = (0.5, 1.5)
+    cfg.INPUT.MOSAIC.PAD_VALUE = 114
+    # ===============================
     cfg.INPUT.CROP.TYPE = False
     cfg.INPUT.TRAIN_PIPELINES = [
         ("RandomFlip", dict()),
@@ -43,6 +50,10 @@ def add_yolo_config(cfg):
         ("RandomLighting", dict(scale=0.1)),
         ("CenterAffine", dict()),
     ]
-    cfg.INPUT.TEST_PIPELINES = [('CenterAffine', dict()),]
+    cfg.INPUT.TEST_PIPELINES = [
+        ('CenterAffine', dict()),
+        ]
     cfg.INPUT.FORMAT = "RGB"
     cfg.TEST.AUG.SIZE = 640
+
+

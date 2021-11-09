@@ -3,7 +3,7 @@ Date: 2021-10-24 08:41:56
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2021-11-07 23:42:18
+LastEditTime: 2021-11-09 20:23:54
 FilePath: /D2/projects/YOLO/train_net.py
 '''
 """
@@ -25,8 +25,8 @@ from detectron2.engine import (
     launch
 )
 from detectron2.data import (
-    DatasetMapper,
-    build_detection_train_loader,
+    # DatasetMapper,
+    # build_detection_train_loader,
     build_detection_test_loader
 )
 from detectron2.evaluation import COCOEvaluator
@@ -34,7 +34,7 @@ from detectron2.config import get_cfg
 from modeling import *
 from config.config import add_yolo_config
 from data.dataset_mapper import BaseDtasetMapper
-
+from data import build_detection_train_loader, MixImgDatasetMapper
 
 class Trainer(DefaultTrainer):
 
@@ -46,7 +46,7 @@ class Trainer(DefaultTrainer):
 
     @classmethod
     def build_train_loader(cls, cfg):
-        mapper = BaseDtasetMapper(cfg, is_train=True)
+        mapper = MixImgDatasetMapper(cfg, is_train=True)
         return build_detection_train_loader(cfg, mapper=mapper)
 
     @classmethod
@@ -73,7 +73,7 @@ def main(args):
             cfg.MODEL.WEIGHTS, resume=args.resume
         )
         # checkpoint = DetectionCheckpointer(model,save_dir='work_dirs')
-        # checkpoint.save("yoloxs_rslu")
+        # checkpoint.save("yolon")
         res = Trainer.test(cfg, model)
         return res
 

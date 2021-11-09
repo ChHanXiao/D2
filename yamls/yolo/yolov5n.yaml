@@ -1,8 +1,10 @@
-_BASE_: "../base-yolox.yaml"
+_BASE_: "../base-yolo.yaml"
 MODEL:
   META_ARCHITECTURE: Yolo
-  YAML: yamls/yolo/yml/yoloxs_rslu.yaml
-  WEIGHTS: work_dirs/weights/yolo/yoloxs_rslu.pth
+  YAML: yamls/yolo/yml/yolov5n.yaml
+  WEIGHTS: work_dirs/weights/yolo/yolov5n.pth
+  PIXEL_MEAN: [0.0, 0.0, 0.0]
+  PIXEL_STD: [255.0, 255.0, 255.0]
 SOLVER:
   BASE_LR: 0.01
   MOMENTUM: 0.9
@@ -14,6 +16,8 @@ SOLVER:
   WARMUP_ITERS: 5000
   MAX_ITER: 250000
   IMS_PER_BATCH: 64
+  AMP:
+    ENABLED: True
 INPUT:  # Uses Yolo's own transforms
   SIZE: (640,640)
   FORMAT: RGB
@@ -21,8 +25,8 @@ DATASETS:
   TRAIN: ("coco_2017_train",)
   TEST: ("coco_2017_val",)
 DATALOADER:
-  NUM_WORKERS: 8
-OUTPUT_DIR: ./work_dirs/yoloxs_rslu
+  NUM_WORKERS: 12
+OUTPUT_DIR: ./work_dirs/yolov5n
 TEST:
   AUG:
     SIZE: 640

@@ -1,8 +1,8 @@
 # Custom
 .vscode
-datasets/
+datasets/*
 out-of-date/
-work_dirs/
+work_dirs/*
 .idea/
 # Byte-compiled / optimized / DLL files
 __pycache__/

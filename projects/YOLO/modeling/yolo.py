@@ -168,6 +168,19 @@ class Yolo(nn.Module):
             loss. Used during training only. In inference, the standard output format, described
             in :doc:`/tutorials/models`.
         """
+        
+        # for batched_input in batched_inputs:
+        #     images = batched_input["image"]
+        #     from detectron2.data import detection_utils as utils
+        #     from detectron2.utils.visualizer import Visualizer
+        #     import cv2
+        #     img = batched_input["image"].permute(1, 2, 0).cpu().detach().numpy()
+        #     target_fields = batched_input["instances"].get_fields()
+        #     img = utils.convert_image_to_rgb(img, self.input_format)
+        #     visualizer = Visualizer(img)
+        #     vis = visualizer.overlay_instances(boxes=target_fields.get("gt_boxes", None),)
+        #     cv2.imwrite('filename.jpg', vis.get_image()[:, :, ::-1])
+
         images = self.preprocess_image(batched_inputs)
         pred = self.model(images.tensor)
 
@@ -217,7 +230,6 @@ class Yolo(nn.Module):
             predn =predn.detach().cpu().numpy()
             predn[:, :4] = warp_boxes(predn[:, :4], np.linalg.inv(warp_matrix), raw_size[1], raw_size[0])
             predn = torch.from_numpy(predn).to(pred.device)
-
             # Predn shape [ndets, 6] of format [xyxy, conf, cls] relative to the input image size
             result = Instances(raw_size)
             result.pred_boxes = Boxes(predn[:, :4])  # TODO: Check if resizing needed
