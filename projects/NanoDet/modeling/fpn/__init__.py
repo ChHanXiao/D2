@@ -1,3 +1,11 @@
+'''
+Date: 2021-10-19 21:15:08
+Author: ChHanXiao
+Github: https://github.com/ChHanXiao
+LastEditors: ChHanXiao
+LastEditTime: 2021-12-29 22:26:40
+FilePath: /D2/projects/NanoDet/modeling/fpn/__init__.py
+'''
 # Copyright 2021 RangiLyu.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +25,7 @@ import copy
 from .fpn import FPN
 from .pan import PAN
 from .tan import TAN
+from .ghost_pan import GhostPAN
 
 
 def build_fpn(cfg):
@@ -28,5 +37,7 @@ def build_fpn(cfg):
         return PAN(**fpn_cfg)
     elif name == "TAN":
         return TAN(**fpn_cfg)
+    elif name == "GhostPAN":
+        return GhostPAN(**fpn_cfg)
     else:
         raise NotImplementedError

@@ -3,7 +3,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import fvcore.nn.weight_init as weight_init
-
+from copy import deepcopy
+import yaml
 from pathlib import Path
 from detectron2.config import configurable
 from detectron2.modeling import BACKBONE_REGISTRY, Backbone
@@ -11,10 +12,8 @@ from detectron2.layers import ShapeSpec, BatchNorm2d, Conv2d
 from ..module.common import *
 from ..head import Detect, DetectX, DetectYoloX
 from ..util.general import make_divisible
-from copy import deepcopy
 
 __all__ = ["YOLO_BACKBONE"]
-
 
 class YOLO_BACKBONE(nn.Module):
 
@@ -49,7 +48,6 @@ class YOLO_BACKBONE(nn.Module):
     @classmethod
     def from_config(cls, cfg):
         model_yaml_file = cfg.MODEL.YAML
-        import yaml  # for torch hub
         with open(model_yaml_file) as f:
             model_yaml = yaml.safe_load(f)  # model dict
         in_channels = 3

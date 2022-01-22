@@ -36,7 +36,4 @@ DATALOADER:
   NUM_WORKERS: 8
 OUTPUT_DIR: ./work_dirs/yolo
 TEST:
-  AUG:
-    SIZE: 640
-    FLIP: False
   EVAL_PERIOD: 4000

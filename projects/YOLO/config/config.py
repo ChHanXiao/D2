@@ -3,7 +3,7 @@ Date: 2021-10-24 08:42:10
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2021-11-09 21:21:38
+LastEditTime: 2022-01-22 14:33:55
 FilePath: /D2/projects/YOLO/config/config.py
 '''
 from detectron2.config import CfgNode as CN
@@ -41,19 +41,17 @@ def add_yolo_config(cfg):
     cfg.INPUT.MOSAIC.CENTER_RATIO = (0.5, 1.5)
     cfg.INPUT.MOSAIC.PAD_VALUE = 114
     # ===============================
-    cfg.INPUT.CROP.TYPE = False
     cfg.INPUT.TRAIN_PIPELINES = [
         ("RandomFlip", dict()),
         ("RandomBrightness", dict(intensity_min=0.6, intensity_max=1.4)),
         ("RandomContrast", dict(intensity_min=0.6, intensity_max=1.4)),
         ("RandomSaturation", dict(intensity_min=0.6, intensity_max=1.4)),
         ("RandomLighting", dict(scale=0.1)),
-        ("CenterAffine", dict()),
+        ("CenterAffine", dict(output_size=(640, 640))),
     ]
     cfg.INPUT.TEST_PIPELINES = [
-        ('CenterAffine', dict()),
+        ('CenterAffine', dict(output_size=(640, 640))),
         ]
     cfg.INPUT.FORMAT = "RGB"
-    cfg.TEST.AUG.SIZE = 640
 
 

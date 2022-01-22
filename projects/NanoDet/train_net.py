@@ -3,7 +3,7 @@ Date: 2021-10-17 10:56:07
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2021-10-24 09:22:38
+LastEditTime: 2022-01-21 22:44:38
 FilePath: /D2/projects/NanoDet/train_net.py
 '''
 """
@@ -18,7 +18,7 @@ import sys
 sys.path.append(os.getcwd())
 from detectron2.checkpoint import DetectionCheckpointer
 from detectron2.engine import (
-    DefaultTrainer,
+    # DefaultTrainer,
     default_argument_parser,
     default_setup,
     launch
@@ -34,9 +34,9 @@ from detectron2.config import get_cfg
 from modeling import *
 from config.config import add_nanodet_config
 from data.dataset_mapper import BaseDtasetMapper
+from engine.defaults import DefaultTrainer_Iter
 
-class Trainer(DefaultTrainer):
-
+class Trainer(DefaultTrainer_Iter):
     @classmethod
     def build_evaluator(cls, cfg, dataset_name, output_folder=None):
         if output_folder is None:

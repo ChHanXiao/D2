@@ -24,7 +24,4 @@ DATALOADER:
   NUM_WORKERS: 8
 OUTPUT_DIR: ./work_dirs/yoloxs_rslu
 TEST:
-  AUG:
-    SIZE: 640
-    FLIP: False
   EVAL_PERIOD: 4000

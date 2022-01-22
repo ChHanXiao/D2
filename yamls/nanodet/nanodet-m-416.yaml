@@ -1,6 +1,10 @@
+# |   AP   |  AP50  |  AP75  |  APs  |  APm   |  APl   |
+# |:------:|:------:|:------:|:-----:|:------:|:------:|
+# | 23.400 | 38.237 | 23.905 | 8.301 | 23.836 | 37.210 |
+
 MODEL:
   META_ARCHITECTURE: NanoDet
-  YML: yamls/nanodet/yml/nanodet-m-416.yml
+  YML: yamls/nanodet/yml/legacy_v0.x_configs/nanodet-m-416.yml
   WEIGHTS: work_dirs/weights/nanodet/nanodet-m-416.pth
   PIXEL_MEAN: [103.53, 116.28, 123.675]
   PIXEL_STD: [57.375, 57.12, 58.395]
@@ -20,7 +24,11 @@ INPUT:
   MAX_SIZE_TEST: 416
   SIZE: (416, 416)
   FORMAT: BGR
-
+  TEST_PIPELINES:
+  - - CenterAffine
+    - output_size:
+      - 416
+      - 416
 DATASETS:
   TRAIN: ("coco_2017_train",)
   TEST: ("coco_2017_val",)
@@ -28,7 +36,4 @@ DATALOADER:
   NUM_WORKERS: 8
 OUTPUT_DIR: ./work_dirs/nanodet-m-416
 TEST:
-  AUG:
-    SIZE: 416
-    FLIP: False
   EVAL_PERIOD: 4000

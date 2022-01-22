@@ -1,6 +1,9 @@
+# |   AP   |  AP50  |  AP75  |  APs  |  APm   |  APl   |
+# |:------:|:------:|:------:|:-----:|:------:|:------:|
+# | 20.736 | 34.650 | 21.005 | 6.061 | 20.014 | 35.266 |
 MODEL:
   META_ARCHITECTURE: NanoDet
-  YML: yamls/nanodet/yml/nanodet-m.yml
+  YML: yamls/nanodet/yml/legacy_v0.x_configs/nanodet-m.yml
   WEIGHTS: work_dirs/weights/nanodet/nanodet-m.pth
   PIXEL_MEAN: [103.53, 116.28, 123.675]
   PIXEL_STD: [57.375, 57.12, 58.395]
@@ -28,7 +31,4 @@ DATALOADER:
   NUM_WORKERS: 8
 OUTPUT_DIR: ./work_dirs/nanodet-m
 TEST:
-  AUG:
-    SIZE: 320
-    FLIP: False
   EVAL_PERIOD: 4000

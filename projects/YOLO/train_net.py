@@ -3,7 +3,7 @@ Date: 2021-10-24 08:41:56
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2021-11-09 20:23:54
+LastEditTime: 2022-01-22 14:34:47
 FilePath: /D2/projects/YOLO/train_net.py
 '''
 """
@@ -72,8 +72,6 @@ def main(args):
         DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
             cfg.MODEL.WEIGHTS, resume=args.resume
         )
-        # checkpoint = DetectionCheckpointer(model,save_dir='work_dirs')
-        # checkpoint.save("yolon")
         res = Trainer.test(cfg, model)
         return res
 

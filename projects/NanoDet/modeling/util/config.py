@@ -3,7 +3,7 @@ Date: 2021-10-19 21:15:08
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2021-10-23 19:47:41
+LastEditTime: 2021-12-29 22:25:34
 FilePath: /D2/projects/NanoDet/modeling/util/config.py
 '''
 # from .yacs import CfgNode
@@ -17,6 +17,7 @@ cfg_s.model.arch = CfgNode(new_allowed=True)
 cfg_s.model.arch.backbone = CfgNode(new_allowed=True)
 cfg_s.model.arch.fpn = CfgNode(new_allowed=True)
 cfg_s.model.arch.head = CfgNode(new_allowed=True)
+cfg_s.model.arch.aux_head = CfgNode(new_allowed=True)
 
 # DATASET related params
 cfg_s.data = CfgNode(new_allowed=True)

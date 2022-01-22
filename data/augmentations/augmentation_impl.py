@@ -3,24 +3,59 @@ Date: 2021-10-16 17:59:30
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2021-10-16 18:15:52
+LastEditTime: 2022-01-22 15:58:50
 FilePath: /D2/data/augmentations/augmentation_impl.py
 '''
 import numpy as np
 from PIL import Image
-
+import math
 from detectron2.data.transforms import Augmentation, NoOpTransform
 
 from ..transforms.transform import (
     AffineTransform,
+    ResizeT,
+    AlbumentationsTransform
 )
 
 __all__ = [
     "CenterAffine",
+    "ResizeAffine",
+    "AlbumentationsWrapper"
 ]
 
-
 class CenterAffine(Augmentation):
+    """
+    Affine Transform
+    """
+
+    def __init__(self, output_size, rescale=True, size_div=32, pad_val=(114,114,114)):
+        """
+        Args:
+            output_size(tuple): a tuple represents (width, height) of image
+        """
+        super().__init__()
+        self._init(locals())
+
+    def get_transform(self, img):
+        """
+        generate one `AffineTransform` for input image
+        """
+        img_shape = img.shape[:2]  # (height, width) 
+        if isinstance(self.output_size, int):
+            self.output_size = (self.output_size, self.output_size)
+        if self.rescale:
+            output_shape = self.output_size
+        else:
+            scale = min(self.output_size[0]/img_shape[0],self.output_size[1]/img_shape[1])
+            if img_shape[0]>img_shape[1]: # h>w
+                new_w = math.ceil(img_shape[1]*scale/self.size_div)*self.size_div
+                output_shape = (int(img_shape[0]*scale), new_w)
+            else:
+                new_h = math.ceil(img_shape[0]*scale/self.size_div)*self.size_div
+                output_shape = (new_h, int(img_shape[1]*scale))
+        return AffineTransform(img_shape[::-1], output_shape[::-1], self.pad_val)
+
+class ResizeAffine(Augmentation):
     """
     Affine Transform
     """
@@ -38,40 +73,50 @@ class CenterAffine(Augmentation):
         generate one `AffineTransform` for input image
         """
         img_shape = img.shape[:2]  # (height, width) 
-        center, scale = self.generate_center_and_scale(img_shape)
-        src, dst = self.generate_src_and_dst(center, scale, self.output_size)
-        return AffineTransform(src, dst, self.output_size)
+        if isinstance(self.output_size, int):
+            self.output_size = (self.output_size, self.output_size)
+        return ResizeT(img_shape[::-1], self.output_size[::-1])
 
-    def generate_center_and_scale(self, img_shape):
-        r"""
-        generate center and scale for image randomly
+class AlbumentationsWrapper(Augmentation):
+    """
+    Wrap an augmentor form the albumentations library: https://github.com/albu/albumentations.
+    Image, Bounding Box and Segmentation are supported.
+    Example:
+    .. code-block:: python
+        import albumentations as A
+        from detectron2.data import transforms as T
+        from detectron2.data.transforms.albumentations import AlbumentationsWrapper
+        augs = T.AugmentationList([
+            AlbumentationsWrapper(A.RandomCrop(width=256, height=256)),
+            AlbumentationsWrapper(A.HorizontalFlip(p=1)),
+            AlbumentationsWrapper(A.RandomBrightnessContrast(p=1)),
+        ])  # type: T.Augmentation
+        # Transform XYXY_ABS -> XYXY_REL
+        h, w, _ = IMAGE.shape
+        bbox = np.array(BBOX_XYXY) / [w, h, w, h]
+        # Define the augmentation input ("image" required, others optional):
+        input = T.AugInput(IMAGE, boxes=bbox, sem_seg=IMAGE_MASK)
+        # Apply the augmentation:
+        transform = augs(input)
+        image_transformed = input.image  # new image
+        sem_seg_transformed = input.sem_seg  # new semantic segmentation
+        bbox_transformed = input.boxes   # new bounding boxes
+        # Transform XYXY_REL -> XYXY_ABS
+        h, w, _ = image_transformed.shape
+        bbox_transformed = bbox_transformed * [w, h, w, h]
+    """
+
+    def __init__(self, augmentor):
+        """
         Args:
-            shape(tuple): a tuple represents (height, width) of image
+            augmentor (albumentations.BasicTransform):
         """
-        height, width = img_shape
-        center = np.array([width / 2, height / 2], dtype=np.float32)
-        scale = float(max(img_shape))
-        return center, scale
+        # super(Albumentations, self).__init__() - using python > 3.7 no need to call rng
+        self._aug = augmentor
 
-    @staticmethod
-    def generate_src_and_dst(center, size, output_size):
-        r"""
-        generate source and destination for affine transform
-        """
-        if not isinstance(size, np.ndarray) and not isinstance(size, list):
-            size = np.array([size, size], dtype=np.float32)
-        src = np.zeros((3, 2), dtype=np.float32)
-        src_w = size[0]
-        src_dir = [0, src_w * -0.5]
-        src[0, :] = center
-        src[1, :] = src[0, :] + src_dir
-        src[2, :] = src[1, :] + (src_dir[1], -src_dir[0])
-
-        dst = np.zeros((3, 2), dtype=np.float32)
-        dst_w, dst_h = output_size
-        dst_dir = [0, dst_w * -0.5]
-        dst[0, :] = [dst_w * 0.5, dst_h * 0.5]
-        dst[1, :] = dst[0, :] + dst_dir
-        dst[2, :] = dst[1, :] + (dst_dir[1], -dst_dir[0])
-
-        return src, dst
+    def get_transform(self, image):
+        do = self._rand_range() < self._aug.p
+        if do:
+            return AlbumentationsTransform(self._aug)
+        else:
+            return NoOpTransform()
