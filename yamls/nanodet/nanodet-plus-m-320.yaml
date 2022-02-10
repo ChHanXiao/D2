@@ -4,21 +4,27 @@
 MODEL:
   META_ARCHITECTURE: NanoDetPlus
   YML: yamls/nanodet/yml/nanodet-plus-m_320.yml
-  # WEIGHTS: work_dirs/weights/nanodet/nanodet-plus-m_320_checkpoint.pth
+  WEIGHTS: work_dirs/weights/nanodet/nanodet-plus-m_320_checkpoint.pth
   PIXEL_MEAN: [103.53, 116.28, 123.675]
   PIXEL_STD: [57.375, 57.12, 58.395]
+MODEL_EMA:
+  ENABLED: True
+  DECAY: 0.999
 SOLVER:
-  BASE_LR: 0.07
-  MOMENTUM: 0.9
-  NESTEROV: True
-  WEIGHT_DECAY: 0.0001
+  OPTIM: AdamW
+  BASE_LR: 0.001
+  WEIGHT_DECAY: 0.05
   WEIGHT_DECAY_NORM: 0.0
-  WEIGHT_DECAY_BIAS: 0.0001
+  WEIGHT_DECAY_BIAS: 0.0
   LR_SCHEDULER_NAME: WarmupCosineLR
   WARMUP_ITERS: 500  # default 500
   MAX_ITER: 350000   # MAX_ITER = epoch*len(dataset)/IMS_PER_BATCH   ##epoch=300
   IMS_PER_BATCH: 32   # default 96
   DETACH_ITER: 12000   # 10 epoch
+  CLIP_GRADIENTS:
+    CLIP_TYPE: value
+    CLIP_VALUE: 35.0
+    ENABLED: True
 INPUT: 
   SIZE: (320, 320)
   FORMAT: BGR

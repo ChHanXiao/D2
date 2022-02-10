@@ -3,7 +3,7 @@ Date: 2022-01-06 21:16:29
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2022-01-21 21:21:20
+LastEditTime: 2022-02-10 21:43:56
 FilePath: /D2/projects/NanoDet/engine/train_loop.py
 '''
 
@@ -28,7 +28,7 @@ class AMPTrainer_Iter(AMPTrainer):
         data_time = time.perf_counter() - start
 
         with autocast():
-            self.model.set_iter(self.iter)
+            self.model.iter=self.iter
             loss_dict = self.model(data)
             if isinstance(loss_dict, torch.Tensor):
                 losses = loss_dict
@@ -60,7 +60,7 @@ class SimpleTrainer_Iter(SimpleTrainer):
         """
         If you want to do something with the losses, you can wrap the model.
         """
-        self.model.set_iter(self.iter)
+        self.model.iter=self.iter
         loss_dict = self.model(data)
         if isinstance(loss_dict, torch.Tensor):
             losses = loss_dict

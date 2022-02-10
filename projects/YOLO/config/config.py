@@ -3,19 +3,32 @@ Date: 2021-10-24 08:42:10
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2022-01-22 14:33:55
+LastEditTime: 2022-02-10 18:06:58
 FilePath: /D2/projects/YOLO/config/config.py
 '''
 from detectron2.config import CfgNode as CN
+
+# yolov5 6.0  hyp
+# optimizer
+    # g0 BatchNorm2d weight (no decay), lr0=0.01
+    # g1 weight (with decay), weight decay=0.0005, lr0=0.01
+    # g2 bias weight (no decay),, lr0=0.01
+    # Adam(g0, lr=hyp['lr0'], betas=(hyp['momentum'], 0.999))
+    # SGD(g0, lr=hyp['lr0'], momentum=hyp['momentum'], nesterov=True)
+# EMA 
+    # decay=0.9999
+
+# 其他参考hyp.scratch.yaml，匹配方式按照宽高比阈值anchor_t，iou_t弃用
+# 内部参数初始化照抄不修改
 
 def add_yolo_config(cfg):
     cfg.MODEL.YAML = "yamls/yolo/yml/yolov5m.yaml"
     cfg.MODEL.YOLO = CN()
     cfg.MODEL.YOLO.FOCAL_LOSS_GAMMA = 0.0
     cfg.MODEL.YOLO.BOX_LOSS_GAIN = 0.05
-    cfg.MODEL.YOLO.CLS_LOSS_GAIN = 0.3
+    cfg.MODEL.YOLO.CLS_LOSS_GAIN = 0.5
     cfg.MODEL.YOLO.CLS_POSITIVE_WEIGHT = 1.0
-    cfg.MODEL.YOLO.OBJ_LOSS_GAIN = 0.7
+    cfg.MODEL.YOLO.OBJ_LOSS_GAIN = 1.0
     cfg.MODEL.YOLO.OBJ_POSITIVE_WEIGHT = 1.0
     cfg.MODEL.YOLO.LABEL_SMOOTHING = 0.0
     cfg.MODEL.YOLO.ANCHOR_T = 4.0
@@ -28,7 +41,7 @@ def add_yolo_config(cfg):
     cfg.SOLVER.NESTEROV = True
     cfg.SOLVER.WEIGHT_DECAY = 0.0005
     cfg.SOLVER.WEIGHT_DECAY_NORM = 0.0
-    cfg.SOLVER.WEIGHT_DECAY_BIAS = 0.0005
+    cfg.SOLVER.WEIGHT_DECAY_BIAS = 0.0
     cfg.SOLVER.LR_SCHEDULER_NAME = "WarmupCosineLR"
     cfg.SOLVER.WARMUP_ITERS = 1000
     cfg.SOLVER.IMS_PER_BATCH = 64

@@ -3,7 +3,7 @@ Date: 2021-10-17 15:41:24
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2022-01-21 21:33:17
+LastEditTime: 2022-02-10 21:53:15
 FilePath: /D2/projects/NanoDet/config/config.py
 '''
 
@@ -13,6 +13,9 @@ def add_nanodet_config(cfg):
     cfg.MODEL.YML = "yamls/nanodet/yml/legacy_v0.x_configs/nanodet-m.yml"
     cfg.MODEL.PIXEL_MEAN = [103.53, 116.28, 123.675]
     cfg.MODEL.PIXEL_STD = [57.375, 57.12, 58.395]
+    cfg.MODEL_EMA = CN()
+    cfg.MODEL_EMA.ENABLED = False
+    cfg.SOLVER.OPTIM = "SGD"
     cfg.SOLVER.BASE_LR = 0.14
     cfg.SOLVER.MOMENTUM = 0.9
     cfg.SOLVER.NESTEROV = True

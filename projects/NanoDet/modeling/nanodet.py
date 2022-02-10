@@ -1,7 +1,7 @@
 '''
 Author: doumu
 Date: 2021-09-27 17:44:05
-LastEditTime: 2022-01-22 13:31:55
+LastEditTime: 2022-02-10 21:44:25
 LastEditors: ChHanXiao
 Description: 
 FilePath: /D2/projects/NanoDet/modeling/nanodet.py
@@ -177,9 +177,6 @@ class NanoDet(nn.Module):
         images = [(x - self.pixel_mean) / self.pixel_std for x in images]
         images = ImageList.from_tensors(images, 0)
         return images
-
-    def set_iter(self, iter):
-        self.iter = iter
 
     @torch.no_grad()
     def forward_(self, batched_inputs):

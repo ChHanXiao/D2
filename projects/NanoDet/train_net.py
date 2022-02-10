@@ -3,7 +3,7 @@ Date: 2021-10-17 10:56:07
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2022-01-21 22:44:38
+LastEditTime: 2022-02-10 21:39:54
 FilePath: /D2/projects/NanoDet/train_net.py
 '''
 """
@@ -35,6 +35,7 @@ from modeling import *
 from config.config import add_nanodet_config
 from data.dataset_mapper import BaseDtasetMapper
 from engine.defaults import DefaultTrainer_Iter
+from engine import model_ema
 
 class Trainer(DefaultTrainer_Iter):
     @classmethod
@@ -56,6 +57,7 @@ class Trainer(DefaultTrainer_Iter):
 
 def setup(args):
     cfg = get_cfg()
+    model_ema.add_model_ema_configs(cfg)
     add_nanodet_config(cfg)
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
@@ -69,10 +71,12 @@ def main(args):
 
     if args.eval_only:
         model = Trainer.build_model(cfg)
-        DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
+        kwargs = model_ema.may_get_ema_checkpointer(cfg, model)
+        DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR, **kwargs).resume_or_load(
             cfg.MODEL.WEIGHTS, resume=args.resume
         )
-        res = Trainer.test(cfg, model)
+        res = Trainer.do_test(cfg, model)
+
         return res
 
     trainer = Trainer(cfg)
