@@ -3,7 +3,7 @@ Date: 2021-10-17 15:41:24
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2022-02-10 21:53:15
+LastEditTime: 2022-02-13 16:22:52
 FilePath: /D2/projects/NanoDet/config/config.py
 '''
 
@@ -15,6 +15,8 @@ def add_nanodet_config(cfg):
     cfg.MODEL.PIXEL_STD = [57.375, 57.12, 58.395]
     cfg.MODEL_EMA = CN()
     cfg.MODEL_EMA.ENABLED = False
+    cfg.MODEL_EMA.DECAY = 0.9998
+    cfg.MODEL_EMA.DEVICE = 'cuda'
     cfg.SOLVER.OPTIM = "SGD"
     cfg.SOLVER.BASE_LR = 0.14
     cfg.SOLVER.MOMENTUM = 0.9
