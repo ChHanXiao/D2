@@ -3,7 +3,7 @@ Date: 2021-10-24 08:42:10
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2022-02-13 17:30:17
+LastEditTime: 2022-02-26 19:44:00
 FilePath: /D2/projects/YOLO/config/config.py
 '''
 from detectron2.config import CfgNode as CN
@@ -36,6 +36,11 @@ def add_yolo_config(cfg):
     cfg.MODEL.YOLO.IOU_THRES = 0.65
     cfg.MODEL.PIXEL_MEAN = [0.0, 0.0, 0.0]
     cfg.MODEL.PIXEL_STD = [255.0, 255.0, 255.0]
+    cfg.MODEL_EMA = CN()
+    cfg.MODEL_EMA.ENABLED = False
+    cfg.MODEL_EMA.DECAY = 0.9999
+    cfg.MODEL_EMA.DEVICE = 'cuda'
+    cfg.SOLVER.OPTIM = "SGD"
     cfg.SOLVER.BASE_LR = 0.01
     cfg.SOLVER.MOMENTUM = 0.937
     cfg.SOLVER.NESTEROV = True

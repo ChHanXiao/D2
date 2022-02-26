@@ -1,3 +1,6 @@
+# |   AP   |  AP50  |  AP75  |  APs   |  APm   |  APl   |
+# |:------:|:------:|:------:|:------:|:------:|:------:|
+# | 28.324 | 46.041 | 30.056 | 14.529 | 32.770 | 36.386 |
 _BASE_: "../base-yolo.yaml"
 MODEL:
   META_ARCHITECTURE: Yolo
@@ -5,16 +8,20 @@ MODEL:
   WEIGHTS: work_dirs/weights/yolo/yolov5n.pth
   PIXEL_MEAN: [0.0, 0.0, 0.0]
   PIXEL_STD: [255.0, 255.0, 255.0]
+MODEL_EMA:
+  ENABLED: False
+  DECAY: 0.9999
 SOLVER:
+  OPTIM: SGD
   BASE_LR: 0.01
   MOMENTUM: 0.937
   NESTEROV: True
   WEIGHT_DECAY: 0.0005
   LR_SCHEDULER_NAME: WarmupCosineLR
-  WARMUP_ITERS: 5000
-  MAX_ITER: 250000
+  WARMUP_ITERS: 5532 # 3 epoch 1844×3
+  MAX_ITER: 553200  # 300 epoch 1844×300
   IMS_PER_BATCH: 64
-INPUT:  # Uses Yolo's own transforms
+INPUT:
   SIZE: (640,640)
   FORMAT: RGB
 DATASETS:

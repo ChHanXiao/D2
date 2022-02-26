@@ -3,16 +3,16 @@ Date: 2022-01-06 21:16:29
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2022-02-10 21:43:56
-FilePath: /D2/projects/NanoDet/engine/train_loop.py
+LastEditTime: 2022-02-26 11:56:41
+FilePath: /D2/projects/engine/train_loop.py
 '''
 
 import time
 import torch
 
 from detectron2.engine.train_loop import (
- AMPTrainer, 
- SimpleTrainer)
+                                        AMPTrainer, 
+                                        SimpleTrainer)
 
 class AMPTrainer_Iter(AMPTrainer):
     def run_step(self):
@@ -28,7 +28,8 @@ class AMPTrainer_Iter(AMPTrainer):
         data_time = time.perf_counter() - start
 
         with autocast():
-            self.model.iter=self.iter
+            if hasattr(self.model, 'iter'):
+                self.model.iter = self.iter
             loss_dict = self.model(data)
             if isinstance(loss_dict, torch.Tensor):
                 losses = loss_dict
@@ -60,7 +61,8 @@ class SimpleTrainer_Iter(SimpleTrainer):
         """
         If you want to do something with the losses, you can wrap the model.
         """
-        self.model.iter=self.iter
+        if hasattr(self.model, 'iter'):
+            self.model.iter = self.iter
         loss_dict = self.model(data)
         if isinstance(loss_dict, torch.Tensor):
             losses = loss_dict

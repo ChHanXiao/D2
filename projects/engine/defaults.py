@@ -3,8 +3,8 @@ Date: 2022-01-06 21:25:06
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2022-02-10 21:39:40
-FilePath: /D2/projects/NanoDet/engine/defaults.py
+LastEditTime: 2022-02-26 21:05:11
+FilePath: /D2/projects/engine/defaults.py
 '''
 
 import logging
@@ -80,8 +80,8 @@ class DefaultTrainer_Iter(DefaultTrainer, TrainerBase):
         model_ema.may_build_model_ema(cfg, model)
         return model
 
-
-    def build_optimizer(cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimizer:
+    @classmethod
+    def build_optimizer(cls, cfg: CfgNode, model: torch.nn.Module) -> torch.optim.Optimizer:
         """
         Build an optimizer from config.
         """
@@ -109,9 +109,8 @@ class DefaultTrainer_Iter(DefaultTrainer, TrainerBase):
 
         return optimizer
         
-
-    def build_lr_scheduler(
-        cfg: CfgNode, optimizer: torch.optim.Optimizer
+    @classmethod
+    def build_lr_scheduler(cls,cfg: CfgNode, optimizer: torch.optim.Optimizer
     ) -> torch.optim.lr_scheduler._LRScheduler:
         """
         Build a LR scheduler from config.

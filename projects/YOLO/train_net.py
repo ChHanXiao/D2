@@ -3,7 +3,7 @@ Date: 2021-10-24 08:41:56
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2022-01-22 14:34:47
+LastEditTime: 2022-02-26 22:10:21
 FilePath: /D2/projects/YOLO/train_net.py
 '''
 """
@@ -35,8 +35,10 @@ from modeling import *
 from config.config import add_yolo_config
 from data.dataset_mapper import BaseDtasetMapper
 from data import build_detection_train_loader, MixImgDatasetMapper
+from projects.engine.defaults import DefaultTrainer_Iter
+from projects.engine import model_ema
 
-class Trainer(DefaultTrainer):
+class Trainer(DefaultTrainer_Iter):
 
     @classmethod
     def build_evaluator(cls, cfg, dataset_name, output_folder=None):
@@ -57,6 +59,7 @@ class Trainer(DefaultTrainer):
 
 def setup(args):
     cfg = get_cfg()
+    model_ema.add_model_ema_configs(cfg)
     add_yolo_config(cfg)
     cfg.merge_from_file(args.config_file)
     cfg.merge_from_list(args.opts)
@@ -69,10 +72,12 @@ def main(args):
     cfg = setup(args)
     if args.eval_only:
         model = Trainer.build_model(cfg)
-        DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
+        kwargs = model_ema.may_get_ema_checkpointer(cfg, model)
+        DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR, **kwargs).resume_or_load(
             cfg.MODEL.WEIGHTS, resume=args.resume
         )
-        res = Trainer.test(cfg, model)
+        # res = Trainer.test(cfg, model)
+        res = Trainer.do_test(cfg, model)
         return res
 
     trainer = Trainer(cfg)

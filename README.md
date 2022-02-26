@@ -3,12 +3,15 @@
  * @Author: ChHanXiao
  * @Github: https://github.com/ChHanXiao
  * @LastEditors: ChHanXiao
- * @LastEditTime: 2022-02-13 17:59:36
+ * @LastEditTime: 2022-02-26 22:30:10
  * @FilePath: /D2/README.md
 -->
 基于detectron2目标检测
 
 预训练权重已验证，[模型下载](https://pan.baidu.com/s/1OrXseqRegTJwb8YOBvAdkw)（密码:l4ov）
+
+使用预训练权重eval需关闭MODEL_EMA
+
 <details>
     <summary>nanodet (click to expand)</summary>
 

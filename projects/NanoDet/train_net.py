@@ -3,7 +3,7 @@ Date: 2021-10-17 10:56:07
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2022-02-10 21:39:54
+LastEditTime: 2022-02-26 12:01:05
 FilePath: /D2/projects/NanoDet/train_net.py
 '''
 """
@@ -34,8 +34,8 @@ from detectron2.config import get_cfg
 from modeling import *
 from config.config import add_nanodet_config
 from data.dataset_mapper import BaseDtasetMapper
-from engine.defaults import DefaultTrainer_Iter
-from engine import model_ema
+from projects.engine.defaults import DefaultTrainer_Iter
+from projects.engine import model_ema
 
 class Trainer(DefaultTrainer_Iter):
     @classmethod
@@ -76,7 +76,6 @@ def main(args):
             cfg.MODEL.WEIGHTS, resume=args.resume
         )
         res = Trainer.do_test(cfg, model)
-
         return res
 
     trainer = Trainer(cfg)

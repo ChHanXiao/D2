@@ -3,7 +3,7 @@ Date: 2021-10-16 17:58:48
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2022-01-22 16:02:01
+LastEditTime: 2022-02-15 22:27:08
 FilePath: /D2/data/transforms/transform.py
 '''
 from typing import Any, Dict, Union, Tuple
@@ -93,6 +93,18 @@ class AffineTransform(Transform):
         coords[..., 0] = np.clip(coords[..., 0], 0, w - 1)
         coords[..., 1] = np.clip(coords[..., 1], 0, h - 1)
         return coords
+
+    def apply_segmentation(self, segmentation: np.ndarray) -> np.ndarray:
+        """
+        Apply AffineTransform for the image(s).
+        Args:
+            img (ndarray): of shape HxW, HxWxC, or NxHxWxC. The array can be
+                of type uint8 in range [0, 255], or floating point in range
+                [0, 1] or [0, 255].
+        Returns:
+            ndarray: the image(s) after applying affine transform.
+        """
+        return cv2.warpAffine(segmentation, self.affine, tuple(self.dst), flags=cv2.INTER_NEAREST, borderValue=(255,255,255))
 
     def apply_warp_matrix(self, warp_matrix: np.ndarray) -> np.ndarray:
         C = np.eye(3)
