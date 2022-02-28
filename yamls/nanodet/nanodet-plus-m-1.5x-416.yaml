@@ -34,23 +34,22 @@ INPUT:
       - 416
       - 416
   TRAIN_PIPELINES:
-  - - RandomFlip
-    - {}
-  - - RandomBrightness
-    - intensity_max: 1.4
-      intensity_min: 0.6
-  - - RandomContrast
-    - intensity_max: 1.4
-      intensity_min: 0.6
-  - - RandomSaturation
-    - intensity_max: 1.4
-      intensity_min: 0.6
-  - - RandomLighting
-    - scale: 0.1
-  - - ResizeAffine
-    - output_size:
+  - - NanoDetAffine
+    - keep_ratio: False
+      output_size:
       - 416
       - 416
+      pipeline:
+        perspective: 0.0
+        scale: [0.6, 1.4]
+        stretch: [[0.8, 1.2], [0.8, 1.2]]
+        rotation: 0
+        shear: 0
+        translate: 0.2
+        flip: 0.5
+        brightness: 0.2
+        contrast: [0.6, 1.4]
+        saturation: [0.5, 1.2]
 DATASETS:
   TRAIN: ("coco_2017_train",)
   TEST: ("coco_2017_val",)

@@ -135,7 +135,8 @@ class Yolo(nn.Module):
         #     visualizer = Visualizer(img)
         #     vis = visualizer.overlay_instances(boxes=target_fields.get("gt_boxes", None),)
         #     cv2.imwrite('filename.jpg', vis.get_image()[:, :, ::-1])
-
+        if torch.onnx.is_in_onnx_export():
+            return self.forward_(batched_inputs)
         images = self.preprocess_image(batched_inputs)
         pred = self.model(images.tensor)
 
@@ -191,3 +192,7 @@ class Yolo(nn.Module):
         images = [(x - self.pixel_mean) / self.pixel_std for x in images]
         images = ImageList.from_tensors(images, 0)
         return images
+    @torch.no_grad()
+    def forward_(self, batched_inputs):
+        preds = self.model(batched_inputs)
+        return preds

@@ -3,7 +3,7 @@ Date: 2022-01-06 21:25:06
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2022-02-26 21:05:11
+LastEditTime: 2022-02-27 20:10:56
 FilePath: /D2/projects/engine/defaults.py
 '''
 
@@ -110,7 +110,7 @@ class DefaultTrainer_Iter(DefaultTrainer, TrainerBase):
         return optimizer
         
     @classmethod
-    def build_lr_scheduler(cls,cfg: CfgNode, optimizer: torch.optim.Optimizer
+    def build_lr_scheduler(cls, cfg: CfgNode, optimizer: torch.optim.Optimizer
     ) -> torch.optim.lr_scheduler._LRScheduler:
         """
         Build a LR scheduler from config.

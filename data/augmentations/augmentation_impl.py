@@ -3,7 +3,7 @@ Date: 2021-10-16 17:59:30
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2022-01-22 15:58:50
+LastEditTime: 2022-02-28 20:50:56
 FilePath: /D2/data/augmentations/augmentation_impl.py
 '''
 import numpy as np
@@ -14,13 +14,15 @@ from detectron2.data.transforms import Augmentation, NoOpTransform
 from ..transforms.transform import (
     AffineTransform,
     ResizeT,
-    AlbumentationsTransform
+    AlbumentationsTransform,
+    NanoDetT
 )
 
 __all__ = [
     "CenterAffine",
     "ResizeAffine",
-    "AlbumentationsWrapper"
+    "AlbumentationsWrapper",
+    "NanoDetAffine"
 ]
 
 class CenterAffine(Augmentation):
@@ -120,3 +122,28 @@ class AlbumentationsWrapper(Augmentation):
             return AlbumentationsTransform(self._aug)
         else:
             return NoOpTransform()
+
+
+class NanoDetAffine(Augmentation):
+    """
+    Affine Transform
+    """
+
+    def __init__(self, pipeline, keep_ratio, output_size):
+        """
+        Args:
+            pipeline: pipeline of nanodet
+            keep_ratio: resize keep ratio
+            output_size(tuple): a tuple represents (width, height) of image
+        """
+        super().__init__()
+        self._init(locals())
+
+    def get_transform(self, img):
+        """
+        generate one `AffineTransform` for input image
+        """
+        img_shape = img.shape[:2]  # (height, width) 
+        if isinstance(self.output_size, int):
+            self.output_size = (self.output_size, self.output_size)
+        return NanoDetT(img_shape[::-1], self.output_size[::-1], self.pipeline, self.keep_ratio)

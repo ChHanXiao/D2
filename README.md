@@ -3,7 +3,7 @@
  * @Author: ChHanXiao
  * @Github: https://github.com/ChHanXiao
  * @LastEditors: ChHanXiao
- * @LastEditTime: 2022-02-26 22:30:10
+ * @LastEditTime: 2022-02-28 21:49:27
  * @FilePath: /D2/README.md
 -->
 基于detectron2目标检测
@@ -36,6 +36,7 @@ TODO
  - [x] yolox训练流程
 
 更新
+ - [2022.02.28] 添加nanodet原版数据增强，添加导出onnx
  - [2022.02.10] 同步nanodet-plus、yolov5 训练细节
  - [2022.01.21] 添加[nanodet-plus](https://github.com/RangiLyu/nanodet)，~~未加AdamW、未加EMA~~
  - [2021.11.09] 添加mosaic 参考[mmdet](https://github.com/open-mmlab/mmdetection)中yolox实现

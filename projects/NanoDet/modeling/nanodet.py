@@ -1,7 +1,7 @@
 '''
 Author: doumu
 Date: 2021-09-27 17:44:05
-LastEditTime: 2022-02-10 21:44:25
+LastEditTime: 2022-02-28 21:12:00
 LastEditors: ChHanXiao
 Description: 
 FilePath: /D2/projects/NanoDet/modeling/nanodet.py
@@ -69,6 +69,8 @@ class NanoDet(nn.Module):
         self.backbone = backbone
         self.fpn = fpn
         self.head = head
+        self.vis_period = vis_period
+        self.input_format = input_format
         self.visthresh = 0.3
         self.register_buffer("pixel_mean", torch.tensor(pixel_mean).view(-1, 1, 1), False)
         self.register_buffer("pixel_std", torch.tensor(pixel_std).view(-1, 1, 1), False)
@@ -246,6 +248,18 @@ class NanoDetPlus(NanoDet):
         #     img = images.numpy().transpose(1,2,0)
         #     cv2.imwrite('filename.jpg', img)
         #     print(images.shape)
+
+        # for batched_input in batched_inputs:
+        #     images = batched_input["image"]
+        #     from detectron2.data import detection_utils as utils
+        #     from detectron2.utils.visualizer import Visualizer
+        #     import cv2
+        #     img = batched_input["image"].permute(1, 2, 0).cpu().detach().numpy()
+        #     target_fields = batched_input["instances"].get_fields()
+        #     img = utils.convert_image_to_rgb(img, self.input_format)
+        #     visualizer = Visualizer(img)
+        #     vis = visualizer.overlay_instances(boxes=target_fields.get("gt_boxes", None),)
+        #     cv2.imwrite('filename.jpg', vis.get_image()[:, :, ::-1])
         if torch.onnx.is_in_onnx_export():
             return self.forward_(batched_inputs)
 

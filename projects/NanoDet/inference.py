@@ -110,9 +110,6 @@ if __name__ == '__main__':
 
     model = load_model(cfg_path, model_path, device)
     CATE_LIST = get_cate(cfg_path)
-    # checkpointer = DetectionCheckpointer(model, save_dir="work_dirs")
-    # save_path = 'yolov5n'
-    # checkpointer.save(save_path)
 
     if os.path.isdir(img_dir):
         files = get_image_list(img_dir)
