@@ -15,15 +15,36 @@ SOLVER:
   WEIGHT_DECAY_NORM: 0.0
   WEIGHT_DECAY_BIAS: 0.0
   LR_SCHEDULER_NAME: WarmupCosineLR
-  WARMUP_ITERS: 2000  # warmup iters = epochs = 280
-  MAX_ITER: 400000
-  IMS_PER_BATCH: 80
+  WARMUP_ITERS: 500  # warmup iters = epochs = 280
+  MAX_ITER: 184750
+  WARMUP_FACTOR: 0.0001
+  COSINE_PARAM: (1, 0.05)
+  IMS_PER_BATCH: 192
 INPUT: 
-  MIN_SIZE_TEST: 320
-  MAX_SIZE_TEST: 320
   SIZE: (320, 320)
   FORMAT: BGR
-
+  TEST_PIPELINES:
+  - - ResizeAffine
+    - output_size:
+      - 320
+      - 320
+  TRAIN_PIPELINES:
+  - - NanoDetAffine
+    - keep_ratio: True
+      output_size:
+      - 320
+      - 320
+      pipeline:
+        perspective: 0.0
+        scale: [0.6, 1.4]
+        stretch: [[0.8, 1.2], [0.8, 1.2]]
+        rotation: 0
+        shear: 0
+        translate: 0.2
+        flip: 0.5
+        brightness: 0.2
+        contrast: [0.6, 1.4]
+        saturation: [0.5, 1.2]
 DATASETS:
   TRAIN: ("coco_2017_train",)
   TEST: ("coco_2017_val",)

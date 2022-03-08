@@ -3,7 +3,7 @@ Date: 2021-10-19 21:16:26
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2021-11-09 20:47:02
+LastEditTime: 2022-03-08 19:16:20
 FilePath: /D2/data/dataset_mapper.py
 '''
 
@@ -23,11 +23,11 @@ from detectron2.structures import BoxMode
 from .detection_utils import build_transform_gen
 
 __all__ = [
-    "BaseDtasetMapper",
+    "BaseDatasetMapper",
     "MixImgDatasetMapper"
 ]
 
-class BaseDtasetMapper(DatasetMapper):
+class BaseDatasetMapper(DatasetMapper):
     """
     A callable which takes a dataset dict in Detectron2 Dataset format,
     and map it into a format used by YOLOF.

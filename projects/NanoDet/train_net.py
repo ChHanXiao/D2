@@ -3,7 +3,7 @@ Date: 2021-10-17 10:56:07
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2022-02-26 12:01:05
+LastEditTime: 2022-03-08 19:16:50
 FilePath: /D2/projects/NanoDet/train_net.py
 '''
 """
@@ -33,7 +33,7 @@ from detectron2.config import get_cfg
 
 from modeling import *
 from config.config import add_nanodet_config
-from data.dataset_mapper import BaseDtasetMapper
+from data.dataset_mapper import BaseDatasetMapper
 from projects.engine.defaults import DefaultTrainer_Iter
 from projects.engine import model_ema
 
@@ -46,12 +46,12 @@ class Trainer(DefaultTrainer_Iter):
 
     @classmethod
     def build_train_loader(cls, cfg):
-        mapper = BaseDtasetMapper(cfg, is_train=True)
+        mapper = BaseDatasetMapper(cfg, is_train=True)
         return build_detection_train_loader(cfg, mapper=mapper)
 
     @classmethod
     def build_test_loader(cls, cfg, dataset_name):
-        mapper = BaseDtasetMapper(cfg, is_train=False)
+        mapper = BaseDatasetMapper(cfg, is_train=False)
         return build_detection_test_loader(cfg, dataset_name, mapper=mapper)
 
 

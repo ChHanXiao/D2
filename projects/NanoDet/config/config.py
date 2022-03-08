@@ -3,7 +3,7 @@ Date: 2021-10-17 15:41:24
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2022-02-13 16:22:52
+LastEditTime: 2022-03-08 19:21:32
 FilePath: /D2/projects/NanoDet/config/config.py
 '''
 
@@ -25,7 +25,11 @@ def add_nanodet_config(cfg):
     cfg.SOLVER.WEIGHT_DECAY_NORM = 0.0
     cfg.SOLVER.WEIGHT_DECAY_BIAS = 0.0
     cfg.SOLVER.LR_SCHEDULER_NAME = "WarmupCosineLR"
-    cfg.SOLVER.WARMUP_ITERS = 1000
+    cfg.SOLVER.MAX_ITER = 184750
+    cfg.SOLVER.WARMUP_METHOD = 'linear'
+    cfg.SOLVER.WARMUP_ITERS = 500
+    cfg.SOLVER.COSINE_PARAM = (1, 0.05)
+    cfg.SOLVER.WARMUP_FACTOR = 0.0001
     cfg.SOLVER.DETACH_ITER = -1
     cfg.SOLVER.IMS_PER_BATCH = 192
     cfg.INPUT.SIZE = (320, 320)

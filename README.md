@@ -3,7 +3,7 @@
  * @Author: ChHanXiao
  * @Github: https://github.com/ChHanXiao
  * @LastEditors: ChHanXiao
- * @LastEditTime: 2022-02-28 21:49:27
+ * @LastEditTime: 2022-03-08 19:24:34
  * @FilePath: /D2/README.md
 -->
 基于detectron2目标检测
@@ -15,7 +15,7 @@
 <details>
     <summary>nanodet (click to expand)</summary>
 
-    训练：nanodet模型结构和loss计算均为原版迁移，其他策略也基本相同，数据增强有差异，按道理训练指标不会和原版差异太大
+    训练：nanodet模型结构和loss计算均为原版迁移，数据增强已同步，warmup和lr已同步，按道理训练指标不会和原版差异太大
     测试：已同步原版，mAP基本无差异
 
 </details>
@@ -36,6 +36,7 @@ TODO
  - [x] yolox训练流程
 
 更新
+ - [2022.02.28] 同步nanodet的warmup和lr
  - [2022.02.28] 添加nanodet原版数据增强，添加导出onnx
  - [2022.02.10] 同步nanodet-plus、yolov5 训练细节
  - [2022.01.21] 添加[nanodet-plus](https://github.com/RangiLyu/nanodet)，~~未加AdamW、未加EMA~~

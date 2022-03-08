@@ -3,7 +3,7 @@ Date: 2022-01-06 21:25:06
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2022-02-27 20:10:56
+LastEditTime: 2022-03-08 19:00:57
 FilePath: /D2/projects/engine/defaults.py
 '''
 
@@ -131,7 +131,7 @@ class DefaultTrainer_Iter(DefaultTrainer, TrainerBase):
                 num_updates=cfg.SOLVER.MAX_ITER,
             )
         elif name == "WarmupCosineLR":
-            sched = CosineParamScheduler(1, 0)
+            sched = CosineParamScheduler(*cfg.SOLVER.COSINE_PARAM)
         else:
             raise ValueError("Unknown LR scheduler: {}".format(name))
 
