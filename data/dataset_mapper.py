@@ -3,7 +3,7 @@ Date: 2021-10-19 21:16:26
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2022-03-08 19:16:20
+LastEditTime: 2022-03-23 23:16:21
 FilePath: /D2/data/dataset_mapper.py
 '''
 
@@ -328,8 +328,9 @@ class MixImgDatasetMapper(DatasetMapper):
             # USER: Modify this if you want to keep them for some reason.
             dataset_dict.pop("annotations", None)
             dataset_dict.pop("sem_seg_file_name", None)
-            warp_matrix = transforms.apply_warp_matrix(np.eye(3))
-            dataset_dict["warp_matrix"] = warp_matrix
+            if hasattr(transforms, 'apply_warp_matrix'):
+                warp_matrix = transforms.apply_warp_matrix(np.eye(3))
+                dataset_dict["warp_matrix"] = warp_matrix
             return dataset_dict
 
         if "annotations" in dataset_dict:
@@ -399,6 +400,9 @@ class MixImgDatasetMapper(DatasetMapper):
         image, annos = self._load_image_with_annos(dataset)
         mosaic_labels = []
         mosaic_bboxes = []
+        with_keypoints = True if 'keypoints' in annos[0] else False
+        if with_keypoints:
+            mosaic_keypoints = []
         if len(image.shape) == 3:
             mosaic_img = np.full((int(img_scale[0] * 2), int(img_scale[1] * 2), 3),pad_val, dtype=image.dtype)
         else:
@@ -430,14 +434,21 @@ class MixImgDatasetMapper(DatasetMapper):
             gt_bboxes_i = np.array(gt_bboxes_i)
             gt_labels_i = [int(obj["category_id"]) for obj in annos_i]
             gt_labels_i = torch.tensor(gt_labels_i, dtype=torch.int64)
+            if with_keypoints:
+                gt_keypoints_i = annos_i[0]['keypoints']
 
             if gt_bboxes_i.shape[0] > 0:
                 padw = x1_p - x1_c
                 padh = y1_p - y1_c
                 gt_bboxes_i[:, 0::2] = scale_ratio_i * gt_bboxes_i[:, 0::2] + padw
                 gt_bboxes_i[:, 1::2] = scale_ratio_i * gt_bboxes_i[:, 1::2] + padh
+                if with_keypoints:
+                    gt_keypoints_i[:, 0] = scale_ratio_i * gt_keypoints_i[:, 0] + padw
+                    gt_keypoints_i[:, 1] = scale_ratio_i * gt_keypoints_i[:, 1] + padh
             mosaic_bboxes.append(gt_bboxes_i)
             mosaic_labels.append(gt_labels_i)
+            if with_keypoints:
+                mosaic_keypoints.append(gt_keypoints_i)
 
         if len(mosaic_labels) > 0:
             mosaic_bboxes = np.concatenate(mosaic_bboxes, 0)
@@ -447,12 +458,21 @@ class MixImgDatasetMapper(DatasetMapper):
         mosaic_bboxes = mosaic_bboxes.tolist()
         mosaic_labels = mosaic_labels.tolist()
         target= []
-        for mosaic_bbox, mosaic_label in zip(mosaic_bboxes, mosaic_labels):
-            annotation={}
-            annotation['category_id'] = mosaic_label
-            annotation['bbox'] = mosaic_bbox
-            annotation["bbox_mode"] = BoxMode.XYXY_ABS
-            target.append(annotation)
+        if with_keypoints:
+            for mosaic_bbox, mosaic_label, mosaic_keypoint in zip(mosaic_bboxes, mosaic_labels, mosaic_keypoints):
+                annotation={}
+                annotation['category_id'] = mosaic_label
+                annotation['bbox'] = mosaic_bbox
+                annotation["bbox_mode"] = BoxMode.XYXY_ABS
+                annotation["keypoints"] = mosaic_keypoint
+                target.append(annotation)
+        else:
+            for mosaic_bbox, mosaic_label in zip(mosaic_bboxes, mosaic_labels):
+                annotation={}
+                annotation['category_id'] = mosaic_label
+                annotation['bbox'] = mosaic_bbox
+                annotation["bbox_mode"] = BoxMode.XYXY_ABS
+                target.append(annotation)
         return mosaic_img, target
 
     def _mosaic_combine(self, loc, center_position_xy, img_shape_wh, img_scale):

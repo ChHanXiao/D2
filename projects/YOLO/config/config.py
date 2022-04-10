@@ -3,7 +3,7 @@ Date: 2021-10-24 08:42:10
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2022-02-26 19:44:00
+LastEditTime: 2022-03-27 22:55:15
 FilePath: /D2/projects/YOLO/config/config.py
 '''
 from detectron2.config import CfgNode as CN
@@ -27,6 +27,7 @@ def add_yolo_config(cfg):
     cfg.MODEL.YOLO.FOCAL_LOSS_GAMMA = 0.0
     cfg.MODEL.YOLO.BOX_LOSS_GAIN = 0.05
     cfg.MODEL.YOLO.CLS_LOSS_GAIN = 0.5
+    cfg.MODEL.YOLO.LMK_LOSS_GAIN = 0.005
     cfg.MODEL.YOLO.CLS_POSITIVE_WEIGHT = 1.0
     cfg.MODEL.YOLO.OBJ_LOSS_GAIN = 1.0
     cfg.MODEL.YOLO.OBJ_POSITIVE_WEIGHT = 1.0
@@ -36,6 +37,8 @@ def add_yolo_config(cfg):
     cfg.MODEL.YOLO.IOU_THRES = 0.65
     cfg.MODEL.PIXEL_MEAN = [0.0, 0.0, 0.0]
     cfg.MODEL.PIXEL_STD = [255.0, 255.0, 255.0]
+    cfg.MODEL.KPT_OKS_SIGMAS = ()
+
     cfg.MODEL_EMA = CN()
     cfg.MODEL_EMA.ENABLED = False
     cfg.MODEL_EMA.DECAY = 0.9999
@@ -49,6 +52,8 @@ def add_yolo_config(cfg):
     cfg.SOLVER.WEIGHT_DECAY_BIAS = 0.0
     cfg.SOLVER.LR_SCHEDULER_NAME = "WarmupCosineLR"
     cfg.SOLVER.WARMUP_ITERS = 1000
+    cfg.SOLVER.COSINE_PARAM = (1, 0.05)
+    cfg.SOLVER.WARMUP_FACTOR = 0.0001
     cfg.SOLVER.IMS_PER_BATCH = 64
     cfg.INPUT.SIZE = (640, 640)
     # ===========mosaic==============

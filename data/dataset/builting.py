@@ -3,15 +3,17 @@ Date: 2021-10-16 17:08:14
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2021-10-16 17:56:52
+LastEditTime: 2022-03-27 22:35:50
 FilePath: /D2/data/dataset/builting.py
 '''
 from .crowd_human import register_crowd
 from .wider_mafa_face import register_face
 from .pseudo_label import register_pseudo
+from .lp import register_lp
 from detectron2.data.datasets import register_coco_instances
 from detectron2.data import MetadataCatalog
 import os
+import os.path as osp
 
 def register_all_crowd(root):
     SPLITS = [
@@ -122,9 +124,34 @@ def register_widerface(root):
     for name, image_root, json_file in SPLITS:
         register_coco_instances(name, widerface_metadata, json_file, image_root)
 
+def register_all_lp(root):
+    CCPD2020_root = osp.join(root,'LPR/CCPD2020')
+    CCPD2020_train_ann = osp.join(CCPD2020_root,'train.json')
+    CCPD2020_train_img = CCPD2020_root
+    CCPD2020_test_ann = osp.join(CCPD2020_root,'test.json')
+    CCPD2020_test_img = CCPD2020_root
+
+    CCPD2019_root = osp.join(root,'LPR/CCPD2019')
+    CCPD2019_train_ann = osp.join(CCPD2019_root,'train.json')
+    CCPD2019_train_img = CCPD2019_root
+    CCPD2019_test_ann = osp.join(CCPD2019_root,'test.json')
+    CCPD2019_test_img = CCPD2019_root
+    CCPD2019_val_ann = osp.join(CCPD2019_root,'val.json')
+    CCPD2019_val_img = CCPD2019_root
+    SPLITS = [
+        ("CCPD2020_train",CCPD2020_train_ann, CCPD2020_train_img),
+        ("CCPD2020_test",CCPD2020_test_ann, CCPD2020_test_img),
+        ("CCPD2019_train",CCPD2019_train_ann, CCPD2019_train_img),
+        ("CCPD2019_test",CCPD2019_test_ann, CCPD2019_test_img),
+        ("CCPD2019_val",CCPD2019_val_ann, CCPD2019_val_img),
+    ]
+    for name, json_file, image_root in SPLITS:
+        register_lp(name, json_file, image_root)
+
 _root = os.getenv("DETECTRON2_DATASETS", "datasets")
 register_all_crowd(_root)
 register_all_face(_root)
 register_all_coco_class(_root)
 register_all_pseudo(_root)
 register_widerface(_root)
+register_all_lp(_root)

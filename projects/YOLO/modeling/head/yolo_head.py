@@ -3,7 +3,7 @@ Date: 2021-11-06 10:38:41
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2022-02-28 21:33:35
+LastEditTime: 2022-04-07 11:02:10
 FilePath: /D2/projects/YOLO/modeling/head/yolo_head.py
 '''
 
@@ -21,10 +21,11 @@ __all__ = ["Detect","DetectX","DetectYoloX"]
 LOGGER = logging.getLogger(__name__)
 
 class Detect(nn.Module):
-    def __init__(self, nc=80, anchors=(), ch=(), inplace=True):  # detection layer
+    def __init__(self, nc=80, anchors=(), keypoints=0, ch=(), inplace=True):  # detection layer
         super().__init__()
         self.nc = nc  # number of classes
-        self.no = nc + 5  # number of outputs per anchor
+        self.no = nc + 5 + keypoints*2  # number of outputs per anchor
+        self.kp = keypoints
         self.nl = len(anchors)  # number of detection layers
         self.na = len(anchors[0]) // 2  # number of anchors
         self.grid = [torch.zeros(1)] * self.nl  # init grid
@@ -34,6 +35,7 @@ class Detect(nn.Module):
         self.inplace = inplace  # use in-place ops (e.g. slice assignment)
         self.stride = None  # strides computed during build
         self.onnx_dynamic = False  # ONNX export parameter
+        
     def forward(self, x):
         z = []  # inference output
         for i in range(self.nl):
@@ -47,15 +49,16 @@ class Detect(nn.Module):
             if not self.training:  # inference
                 if self.grid[i].shape[2:4] != x[i].shape[2:4] or self.onnx_dynamic:
                     self.grid[i], self.anchor_grid[i] = self._make_grid(nx, ny, i)
+                # y = torch.full_like(x[i], 0)
 
                 y = x[i].sigmoid()
-                if not self.inplace or torch.onnx.is_in_onnx_export():
-                    xy = (y[..., 0:2] * 2. - 0.5 + self.grid[i]) * self.stride[i]  # xy
-                    wh = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
-                    y = torch.cat((xy, wh, y[..., 4:]), -1)
-                else:
-                    y[..., 0:2] = (y[..., 0:2] * 2. - 0.5 + self.grid[i]) * self.stride[i]  # xy
-                    y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
+                y[..., 0:2] = (y[..., 0:2] * 2. - 0.5 + self.grid[i]) * self.stride[i]  # xy
+                y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i]  # wh
+                if self.kp > 0:
+                    y[..., 5:5+2*self.kp] = y[..., 5:5+2*self.kp] * 8. - 4.
+                    for k in range(self.kp):
+                        y[..., 5+2*k:7+2*k] = y[..., 5+2*k:7+2*k] * self.anchor_grid[i] + self.grid[i] * self.stride[i]
+
                 z.append(y.view(bs, -1, self.no))
         if torch.onnx.is_in_onnx_export():
             return z

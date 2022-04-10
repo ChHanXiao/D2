@@ -3,7 +3,7 @@ Date: 2021-10-24 08:41:56
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2022-02-26 22:10:21
+LastEditTime: 2022-04-10 22:08:05
 FilePath: /D2/projects/YOLO/train_net.py
 '''
 """
@@ -33,10 +33,11 @@ from detectron2.evaluation import COCOEvaluator
 from detectron2.config import get_cfg
 from modeling import *
 from config.config import add_yolo_config
-from data.dataset_mapper import BaseDtasetMapper
+from data.dataset_mapper import BaseDatasetMapper
 from data import build_detection_train_loader, MixImgDatasetMapper
 from projects.engine.defaults import DefaultTrainer_Iter
 from projects.engine import model_ema
+import weakref
 
 class Trainer(DefaultTrainer_Iter):
 
@@ -44,7 +45,8 @@ class Trainer(DefaultTrainer_Iter):
     def build_evaluator(cls, cfg, dataset_name, output_folder=None):
         if output_folder is None:
             output_folder = Path(cfg.OUTPUT_DIR) / "inference"
-        return COCOEvaluator(dataset_name, output_dir=output_folder)
+        kpt_oks_sigmas = cfg.MODEL.get("KPT_OKS_SIGMAS",())
+        return COCOEvaluator(dataset_name, output_dir=output_folder,kpt_oks_sigmas=kpt_oks_sigmas)
 
     @classmethod
     def build_train_loader(cls, cfg):
@@ -53,7 +55,7 @@ class Trainer(DefaultTrainer_Iter):
 
     @classmethod
     def build_test_loader(cls, cfg, dataset_name):
-        mapper = BaseDtasetMapper(cfg, is_train=False)
+        mapper = BaseDatasetMapper(cfg, is_train=False)
         return build_detection_test_loader(cfg, dataset_name, mapper=mapper)
 
 
@@ -72,12 +74,10 @@ def main(args):
     cfg = setup(args)
     if args.eval_only:
         model = Trainer.build_model(cfg)
-        kwargs = model_ema.may_get_ema_checkpointer(cfg, model)
-        DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR, **kwargs).resume_or_load(
+        DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
             cfg.MODEL.WEIGHTS, resume=args.resume
         )
-        # res = Trainer.test(cfg, model)
-        res = Trainer.do_test(cfg, model)
+        res = Trainer.test(cfg, model)
         return res
 
     trainer = Trainer(cfg)

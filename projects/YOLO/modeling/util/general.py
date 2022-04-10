@@ -93,7 +93,7 @@ def bbox_iou(box1, box2, x1y1x2y2=True, GIoU=False, DIoU=False, CIoU=False, EIoU
 
 
 def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=None, agnostic=False, multi_label=False,
-                        labels=(), max_det=300):
+                        labels=(), max_det=300, keypoints=0):
     """Runs Non-Maximum Suppression (NMS) on inference results
         conf_thresh - 0.1 (for yolov4)
         iou_thresh - 0.6 (for yolov4)
@@ -105,9 +105,9 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
          list of detections, on (n,6) tensor per image [xyxy, conf, cls]
     """
     # if yolov3 or yolov5:
-    nc = prediction.shape[2] - 5  # number of classes
+    nc = prediction.shape[2] - 5 - keypoints*2  # number of classes
     # else
-    nc = prediction[0].shape[1] - 5  # Number of classes
+    # nc = prediction[0].shape[1] - 5  # Number of classes
     xc = prediction[..., 4] > conf_thres  # candidates
 
     # Checks
@@ -124,8 +124,7 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
     merge = False  # use merge-NMS
 
     t = time.time()
-    output = [torch.zeros((0, 6), device=prediction.device)
-              ] * prediction.shape[0]
+    output = [torch.zeros((0, 6+keypoints*2), device=prediction.device)] * prediction.shape[0]
     for xi, x in enumerate(prediction):  # image index, image inference
         # Apply constraints
         # x[((x[..., 2:4] < min_wh) | (x[..., 2:4] > max_wh)).any(1), 4] = 0  # width-height
@@ -134,10 +133,10 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
         # Cat apriori labels if autolabelling - Not used in the YOLOV4
         if labels and len(labels[xi]):
             l_ = labels[xi]
-            v = torch.zeros((len(l_), nc + 5), device=x.device)
+            v = torch.zeros((len(l_), nc + 5 + keypoints*2), device=x.device)
             v[:, :4] = l_[:, 1:5]  # box
             v[:, 4] = 1.0  # conf
-            v[range(len(l_)), l_[:, 0].long() + 5] = 1.0  # cls
+            v[range(len(l_)), l_[:, 0].long() + 5 + keypoints*2] = 1.0  # cls
             x = torch.cat((x, v), 0)
         #################################################################
         # If none remain process next image
@@ -145,19 +144,24 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
             continue
 
         # Compute conf
-        x[:, 5:] *= x[:, 4:5]  # conf = obj_conf * cls_conf
+        x[:, 5+keypoints*2:] *= x[:, 4:5]  # conf = obj_conf * cls_conf
 
         # Box (center x, center y, width, height) to (x1, y1, x2, y2)
         box = xywh2xyxy(x[:, :4])
 
         # Detections matrix nx6 (xyxy, conf, cls)
         if multi_label:
-            i, j = (x[:, 5:] > conf_thres).nonzero(as_tuple=False).T
-            x = torch.cat((box[i], x[i, j + 5, None], j[:, None].float()), 1)
+            i, j = (x[:, 5+keypoints*2:] > conf_thres).nonzero(as_tuple=False).T
+            if keypoints>0:
+                x = torch.cat((box[i], x[i, j + 5+keypoints*2, None],x[:, 5:5+keypoints*2], j[:, None].float()), 1)
+            else:
+                x = torch.cat((box[i], x[i, j + 5, None], j[:, None].float()), 1)
         else:  # best class only
-            conf, j = x[:, 5:].max(1, keepdim=True)
-            x = torch.cat((box, conf, j.float()), 1)[
-                conf.view(-1) > conf_thres]
+            conf, j = x[:, 5+keypoints*2:].max(1, keepdim=True)
+            if keypoints>0:
+                x = torch.cat((box, conf, x[:, 5:5+keypoints*2], j.float()), 1)[conf.view(-1) > conf_thres]
+            else:
+                x = torch.cat((box, conf, j.float()), 1)[conf.view(-1) > conf_thres]
 
         # Filter by class
         if classes is not None:
@@ -177,7 +181,7 @@ def non_max_suppression(prediction, conf_thres=0.25, iou_thres=0.45, classes=Non
             x = x[x[:, 4].argsort(descending=True)[:max_nms]]
         ###############################################
         # Batched NMS
-        c = x[:, 5:6] * (0 if agnostic else max_wh)  # classes
+        c = x[:, 5+keypoints*2:6+keypoints*2] * (0 if agnostic else max_wh)  # classes
         # boxes (offset by class), scores
         boxes, scores = x[:, :4] + c, x[:, 4]
         i = torchvision.ops.nms(boxes, scores, iou_thres)  # NMS

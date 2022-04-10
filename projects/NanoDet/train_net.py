@@ -3,7 +3,7 @@ Date: 2021-10-17 10:56:07
 Author: ChHanXiao
 Github: https://github.com/ChHanXiao
 LastEditors: ChHanXiao
-LastEditTime: 2022-03-08 19:16:50
+LastEditTime: 2022-04-10 22:11:32
 FilePath: /D2/projects/NanoDet/train_net.py
 '''
 """
@@ -71,11 +71,10 @@ def main(args):
 
     if args.eval_only:
         model = Trainer.build_model(cfg)
-        kwargs = model_ema.may_get_ema_checkpointer(cfg, model)
-        DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR, **kwargs).resume_or_load(
+        DetectionCheckpointer(model, save_dir=cfg.OUTPUT_DIR).resume_or_load(
             cfg.MODEL.WEIGHTS, resume=args.resume
         )
-        res = Trainer.do_test(cfg, model)
+        res = Trainer.test(cfg, model)
         return res
 
     trainer = Trainer(cfg)

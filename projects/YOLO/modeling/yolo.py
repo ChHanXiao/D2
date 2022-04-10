@@ -1,5 +1,6 @@
 import logging
 import math
+from matplotlib.pyplot import axis
 import numpy as np
 import torch
 from torch import nn, Tensor
@@ -40,6 +41,21 @@ def warp_boxes(boxes, M, width, height):
     else:
         return boxes
 
+def warp_points(points, M, width, height):
+    n = len(points)
+    if n:
+        point_num = int(len(points[0])/2)
+        # warp points
+        xy = np.ones((n*point_num, 3))
+        xy[:, :2] = points.reshape(n * point_num, 2)
+        xy = xy @ M.T  # transform
+        xy = (xy[:, :2] / xy[:, 2:3]).reshape(n, -1)  # rescale
+        # clip boxes
+        xy[:, 0::2] = xy[:, 0::2].clip(0, width)
+        xy[:, 1::2] = xy[:, 1::2].clip(0, height)
+        return xy.astype(np.float32)
+    else:
+        return points
 
 @META_ARCH_REGISTRY.register()
 class Yolo(nn.Module):
@@ -104,6 +120,54 @@ class Yolo(nn.Module):
     def device(self):
         return self.pixel_mean.device
 
+    def visualize_training(self, batched_inputs, results):
+        """
+        A function used to visualize ground truth images and final network
+        predictions.
+        It shows ground truth bounding boxes on the original image and up to 20
+        predicted object bounding boxes on the original image.
+        Args:
+            batched_inputs (list): a list that contains input to the model.
+            results (List[Instances]): a list of #images elements.
+        """
+        from detectron2.utils.visualizer import Visualizer
+
+        assert len(batched_inputs) == len(
+            results
+        ), "Cannot visualize inputs and results of different sizes"
+        storage = get_event_storage()
+        max_boxes = 20
+
+        image_index = 0  # only visualize a single image
+        img = batched_inputs[image_index]["image"]
+        img = convert_image_to_rgb(img.permute(1, 2, 0), self.input_format)
+        v_gt = Visualizer(img, None)
+        gt_keypoints=None
+        if self.model.kp>0:
+            gt_keypoints = batched_inputs[image_index]["instances"].gt_keypoints
+        v_gt = v_gt.overlay_instances(
+            boxes=batched_inputs[image_index]["instances"].gt_boxes,
+            keypoints=gt_keypoints
+            )
+        anno_img = v_gt.get_image()
+        processed_results = detector_postprocess(results[image_index],
+                                                 img.shape[0], img.shape[1])
+        predicted_boxes = processed_results.pred_boxes.tensor.detach().cpu().numpy()
+        predicted_boxes = predicted_boxes[0:max_boxes]
+        predicted_keypoints=None
+        if self.model.kp>0:
+            predicted_keypoints = processed_results.pred_keypoints.detach().cpu().numpy()
+            predicted_keypoints = predicted_keypoints[0:max_boxes]
+
+        v_pred = Visualizer(img, None)
+        v_pred = v_pred.overlay_instances(boxes=predicted_boxes, keypoints=predicted_keypoints)
+        prop_img = v_pred.get_image()
+        vis_img = np.vstack((anno_img, prop_img))
+        vis_img = vis_img.transpose(2, 0, 1)
+        vis_name = f"Top: GT bounding boxes; " \
+                   f"Bottom: {max_boxes} Highest Scoring Results"
+        storage.put_image(vis_name, vis_img)
+
     def forward(self, batched_inputs: Tuple[Dict[str, Tensor]]):
         """
         Args:
@@ -133,18 +197,24 @@ class Yolo(nn.Module):
         #     target_fields = batched_input["instances"].get_fields()
         #     img = utils.convert_image_to_rgb(img, self.input_format)
         #     visualizer = Visualizer(img)
-        #     vis = visualizer.overlay_instances(boxes=target_fields.get("gt_boxes", None),)
+        #     vis = visualizer.overlay_instances(boxes=target_fields.get("gt_boxes", None),
+        #                                        keypoints=target_fields.get("gt_keypoints", None),)
         #     cv2.imwrite('filename.jpg', vis.get_image()[:, :, ::-1])
+
         if torch.onnx.is_in_onnx_export():
             return self.forward_(batched_inputs)
         images = self.preprocess_image(batched_inputs)
         pred = self.model(images.tensor)
 
         if self.training:
-            assert not torch.jit.is_scripting(), "Not supported"
             assert "instances" in batched_inputs[0], "Instance annotations are missing in training!"
             gt_instances = [x["instances"].to(self.device) for x in batched_inputs]
             losses = self.loss(pred, gt_instances)
+            if self.vis_period > 0:
+                storage = get_event_storage()
+                if storage.iter % self.vis_period == 0:
+                    results = self.inference(pred, images.image_sizes)
+                    self.visualize_training(batched_inputs, results)
             return losses
         else:
             raw_size_ = []
@@ -155,32 +225,58 @@ class Yolo(nn.Module):
                 warp_matrix = input_per_image.get("warp_matrix", np.eye(3))
                 raw_size_.append((width,height))
                 warp_matrix_.append(warp_matrix)
-            results = self.process_inference(pred, images.image_sizes, raw_size_, warp_matrix_)
+            results = self.process_inference(pred, raw_size_, warp_matrix_)
             processed_results = []
             for results_per_image in results:
                 processed_results.append({"instances": results_per_image})
             return processed_results
 
-    def process_inference(self, out, image_sizes, raw_size_, warp_matrix_):
-        out = non_max_suppression(out, self.conf_thres, self.iou_thres, multi_label=True, agnostic=self.single_cls)
-        assert len(out) == len(image_sizes)
+    def inference(self, x, image_sizes):
+        head = self.model.model[-1]
+        z = []
+        for i in range(head.nl):
+            # x(bs,na,ny,nx,no)
+            bs, _, ny, nx, _ = x[i].shape
+            if head.grid[i].shape[2:4] != x[i].shape[2:4]:
+                head.grid[i], head.anchor_grid[i] = head._make_grid(nx, ny, i)
+            y = x[i].sigmoid()
+            y[..., 0:2] = (y[..., 0:2] * 2. - 0.5 + head.grid[i]) * head.stride[i]  # xy
+            y[..., 2:4] = (y[..., 2:4] * 2) ** 2 * head.anchor_grid[i]  # wh
+            if head.kp > 0:
+                y[..., 5:5+2*head.kp] = y[..., 5:5+2*head.kp] * 8. - 4.
+                for k in range(head.kp):
+                    y[..., 5+2*k:7+2*k] = y[..., 5+2*k:7+2*k] * head.anchor_grid[i] + head.grid[i] * head.stride[i]
+            z.append(y.view(bs, -1, head.no))
+            warp_matrix_ = np.expand_dims(np.eye(3),0).repeat(len(image_sizes), axis=0)
+        return self.process_inference(torch.cat(z, 1), image_sizes, warp_matrix_)
+
+    def process_inference(self, out, raw_size_, warp_matrix_):
+        kp = self.model.kp
+        out = non_max_suppression(out, self.conf_thres, self.iou_thres, multi_label=True, agnostic=self.single_cls, keypoints=kp)
+        assert len(out) == len(raw_size_)
         results_all: List[Instances] = []
         # Statistics per image
-        for si, (pred, img_size, raw_size, warp_matrix) in enumerate(zip(out, image_sizes, raw_size_, warp_matrix_)):
+        for si, (pred, raw_size, warp_matrix) in enumerate(zip(out, raw_size_, warp_matrix_)):
             if len(pred) == 0:
                 continue
             # Predictions
-            if self.single_cls:
-                pred[:, 5] = 0
             predn = pred.clone()
             predn = predn.detach().cpu().numpy()
             predn[:, :4] = warp_boxes(predn[:, :4], np.linalg.inv(warp_matrix), raw_size[0], raw_size[1])
+            if kp>0:
+                predn[:, 5:5+kp*2] = warp_points(predn[:, 5:5+kp*2], np.linalg.inv(warp_matrix), raw_size[0], raw_size[1])
+
             predn = torch.from_numpy(predn).to(pred.device)
             # Predn shape [ndets, 6] of format [xyxy, conf, cls] relative to the input image size
             result = Instances((raw_size[1], raw_size[0]))
             result.pred_boxes = Boxes(predn[:, :4])  # TODO: Check if resizing needed
             result.scores = predn[:, 4]
-            result.pred_classes = predn[:, 5].int()   # TODO: Check the classes
+            result.pred_classes = predn[:, 5+kp*2].int()   # TODO: Check the classes
+            if kp>0:
+                predicted_keypoints = predn[:, 5:5+kp*2].reshape(len(predn),-1,2)
+                point_mask = 2*torch.ones(predicted_keypoints.shape[:-1]).unsqueeze(2).to(self.device)
+                result.pred_keypoints = torch.cat((predicted_keypoints, point_mask),dim=2)
+
             results_all.append(result)
         return results_all
 
@@ -192,6 +288,7 @@ class Yolo(nn.Module):
         images = [(x - self.pixel_mean) / self.pixel_std for x in images]
         images = ImageList.from_tensors(images, 0)
         return images
+    
     @torch.no_grad()
     def forward_(self, batched_inputs):
         preds = self.model(batched_inputs)

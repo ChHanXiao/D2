@@ -22,8 +22,8 @@ class YOLO_BACKBONE(nn.Module):
         super().__init__()
         self.yaml = cfg
         ch = self.yaml['ch'] = self.yaml.get('ch', ch)  # input channels
+        self.kp = 0
         self.model, self.save = self.parse_model(deepcopy(self.yaml), ch=[ch])  # model, savelist
-
         self.names = [str(i) for i in range(self.yaml['nc'])]  # default names
         self.inplace = self.yaml.get('inplace', False)
        # Build strides, anchors
@@ -96,8 +96,10 @@ class YOLO_BACKBONE(nn.Module):
 
     def parse_model(self, d, ch):  # model_dict, input_channels(3)
         anchors, nc, gd, gw = d['anchors'], d['nc'], d['depth_multiple'], d['width_multiple']
+        keypoints = d.get('keypoints', 0)
+        self.kp = keypoints
         na = (len(anchors[0]) // 2) if isinstance(anchors, list) else anchors  # number of anchors
-        no = na * (nc + 5)  # number of outputs = anchors * (classes + 5)
+        no = na * (nc + 5 + 2 * keypoints*2)  # number of outputs = anchors * (classes + 5 + keypoints*2)
 
         layers, save, c2 = [], [], ch[-1]  # layers, savelist, ch out
         for i, (f, n, m, args) in enumerate(d['backbone'] + d['head']):  # from, number, module, args
